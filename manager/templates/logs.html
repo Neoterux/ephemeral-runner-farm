@@ -2,10 +2,12 @@
 {% from "_macros.html" import icon %}
 {% block title %}logs · {{ host_id }} #{{ slot }}{% endblock %}
 {% block content %}
-<h1>{{ icon('terminal') }} {{ host_id }} <span class="dim">/</span> slot&nbsp;#{{ slot }}</h1>
+<div class="page-head">
+  <div><p class="eyebrow">Fleet / {{ host_id }}</p><h1>{{ icon('terminal') }} Slot #{{ slot }} logs</h1><p class="page-lede">Live job output and the system journal for this runner.</p></div>
+</div>
 
 <div class="log-toolbar">
-  <a href="/fleet" class="btn">{{ icon('server') }}fleet</a>
+  <a href="/fleet" class="btn">{{ icon('server') }}Back to fleet</a>
   <span class="sep"></span>
   <label class="inline">lines
     <select id="lines" onchange="reload()">

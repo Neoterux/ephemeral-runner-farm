@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 232 60" width="232" height="60" color="#2fe8b0" role="img" aria-label="runner-farm">
+<title>runner-farm</title>
+<g transform="translate(0,3) scale(0.82)"><circle cx="32" cy="19" r="13" fill="none" stroke="currentColor" stroke-width="2.2" opacity=".36"/><g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M27 27 21 36"/><path d="M37 27 43 36"/><path d="M25 47 39 47"/></g><g fill="none" stroke="currentColor" stroke-width="4"><rect x="9" y="37" width="16" height="16" rx="4.5"/><path d="M12.5 41.5 21.5 41.5"/><rect x="39" y="37" width="16" height="16" rx="4.5"/><path d="M42.5 41.5 51.5 41.5"/></g><rect x="24" y="11" width="16" height="16" rx="4.5" fill="currentColor"/></g>
+<text x="60" y="41" font-family="'Red Hat Display','Segoe UI',system-ui,sans-serif" font-size="28" font-weight="700" letter-spacing="-1" fill="currentColor">runner-farm</text>
+</svg>

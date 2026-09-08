@@ -2,17 +2,19 @@
 {% from "_macros.html" import icon %}
 {% block title %}Disks{% endblock %}
 {% block content %}
-<h1>{{ icon('hdd') }} Disk usage</h1>
-<p class="meta">watermarks — warn {{ disk.watermarks.warn }}% · prune {{ disk.watermarks.prune }}% · freeze {{ disk.watermarks.freeze }}%</p>
+<div class="page-head">
+  <div><p class="eyebrow">Operations / Storage</p><h1>Disk usage</h1><p class="page-lede">Capacity trends and reclaimable Podman storage by host.</p></div>
+  <div class="threshold-legend"><span><i class="ok-dot"></i>Warn {{ disk.watermarks.warn }}%</span><span><i class="warn-dot"></i>Prune {{ disk.watermarks.prune }}%</span><span><i class="err-dot"></i>Freeze {{ disk.watermarks.freeze }}%</span></div>
+</div>
 
 {% for hid, d in disk.hosts.items() %}
 <section class="panel">
   <div class="host-head">
     <h2>{{ icon('server') }} {{ hid }}</h2>
-    <form method="post" action="/hosts/{{ hid }}/prune"><button>{{ icon('broom') }} podman system prune</button></form>
+    <form method="post" action="/hosts/{{ hid }}/prune" onsubmit="return confirm('Prune unused Podman data on {{ hid }}?')"><button>{{ icon('broom') }} Reclaim space</button></form>
   </div>
 
-  <div style="padding:.9rem 1.1rem">
+  <div class="panel-body">
   {% for m in d.all_mounts %}
   {% set lvl = 'freeze' if m.used_pct >= disk.watermarks.freeze else 'prune' if m.used_pct >= disk.watermarks.prune else 'warn' if m.used_pct >= disk.watermarks.warn else 'ok' %}
   <div class="gauge-row">

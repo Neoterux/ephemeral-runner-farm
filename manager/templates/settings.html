@@ -1,21 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Settings{% endblock %}
+{% from "_macros.html" import icon %}
 {% block content %}
-<h1>Settings</h1>
+<div class="page-head">
+  <div><p class="eyebrow">Workspace</p><h1>Settings</h1><p class="page-lede">Account security and read-only infrastructure configuration.</p></div>
+</div>
 
-<section class="panel">
-  <h2>Change your password</h2>
+<div class="settings-grid">
+<section class="panel settings-security">
+  <div class="section-head"><span><span class="summary-icon">{{ icon('check') }}</span><span><h2>Account security</h2><small>Update the password for @{{ user.username }}</small></span></span></div>
   {% if pw_error %}<div class="banner err">{{ pw_error }}</div>{% endif %}
-  <form method="post" action="/password" class="stack">
+  <form method="post" action="/password" class="stack panel-body">
     <label>Current password <input type="password" name="current" autocomplete="current-password" required></label>
     <label>New password <input type="password" name="new" autocomplete="new-password" minlength="12" required></label>
     <label>Confirm <input type="password" name="confirm" autocomplete="new-password" minlength="12" required></label>
-    <button type="submit">Update password</button>
+    <button type="submit" class="primary">Update password</button>
   </form>
 </section>
 
 <section class="panel">
-  <h2>GitHub App</h2>
+  <div class="section-head"><span><span class="summary-icon">{{ icon('github') }}</span><span><h2>GitHub App</h2><small>Runner registration connection</small></span></span></div>
   <table class="kv">
     <tr><th>Org</th><td>{{ cfg.gh_org }}</td></tr>
     <tr><th>App ID</th><td>{{ cfg.gh_app_id }}</td></tr>
@@ -26,9 +30,10 @@
     </td></tr>
   </table>
 </section>
+</div>
 
 <section class="panel">
-  <h2>Runner groups</h2>
+  <div class="section-head"><span><span class="summary-icon">{{ icon('layers') }}</span><span><h2>Runner groups</h2><small>Available organization-level groups</small></span></span></div>
   <datalist id="rg-list">
     {% for g in runner_groups %}<option value="{{ g.name }}">{% endfor %}
   </datalist>
@@ -44,8 +49,8 @@
 </section>
 
 <section class="panel">
-  <h2>Hosts</h2>
-  <p class="dim">Hosts are defined in <code>manager.toml</code>; edit there and restart the manager to change them.</p>
+  <div class="section-head"><span><span class="summary-icon">{{ icon('server') }}</span><span><h2>Hosts</h2><small>Configured infrastructure endpoints</small></span></span></div>
+  <p class="dim panel-note">Hosts are defined in <code>manager.toml</code>. Edit the file and restart the manager to make changes.</p>
   <table class="kv">
     {% for h in cfg.hosts %}
     <tr><th>{{ h.id }}</th><td>

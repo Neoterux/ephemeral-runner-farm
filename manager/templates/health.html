@@ -2,11 +2,16 @@
 {% block title %}Health{% endblock %}
 {% from "_macros.html" import icon %}
 {% block content %}
-<h1>{{ icon("activity") }} Health</h1>
+{% set reachable = snap.hosts | selectattr('reachable') | list | length %}
+<div class="page-head">
+  <div><p class="eyebrow">Operations / Health</p><h1>System health</h1><p class="page-lede">Host availability, runner events, and operator activity in one timeline.</p></div>
+  <span class="health-badge {{ 'healthy' if reachable == snap.hosts | length else 'degraded' }}">{{ icon('activity') }} {{ reachable }}/{{ snap.hosts | length }} hosts online</span>
+</div>
 
-<section class="panel">
-  <h2 style="padding:.85rem 1.1rem">Hosts</h2>
-  <div style="padding:0 1.1rem 1.1rem">
+<div class="health-grid">
+<section class="panel health-overview">
+  <div class="section-head"><span><span class="summary-icon">{{ icon('server') }}</span><span><h2>Host status</h2><small>Agent connectivity</small></span></span></div>
+  <div class="panel-body compact">
   <table class="kv">
     {% for h in snap.hosts %}
     <tr>
@@ -24,9 +29,9 @@
   </div>
 </section>
 
-<section class="panel">
-  <h2 style="padding:.85rem 1.1rem">Orphaned runner registrations</h2>
-  <div style="padding:0 1.1rem 1.1rem">
+<section class="panel health-overview">
+  <div class="section-head"><span><span class="summary-icon">{{ icon('github') }}</span><span><h2>Orphaned runners</h2><small>GitHub registrations without a container</small></span></span><span class="count-badge">{{ snap.meta.orphans | length }}</span></div>
+  <div class="panel-body compact">
   <p class="dim" style="font-size:.8rem">GitHub runners named <code>&lt;host&gt;-slot-&lt;n&gt;</code> that are offline with no live container behind them.</p>
   {% if snap.meta.orphans %}
   <table class="slots">
@@ -50,15 +55,14 @@
   {% else %}<p class="dim">None.</p>{% endif %}
   </div>
 </section>
+</div>
 
 <section class="panel">
-  <h2 style="padding:.85rem 1.1rem">{{ icon('activity') }} Events
-    <small style="font-weight:400">
+  <div class="section-head"><span><span class="summary-icon">{{ icon('activity') }}</span><span><h2>System events</h2><small>
       {% if api_on %}· API on{% else %}· API off{% endif %}
       {% if plugins %}· plugins: {{ plugins | join(', ') }}{% endif %}
-    </small>
-  </h2>
-  <div style="padding:0 1.1rem 1.1rem">
+    </small></span></span></div>
+  <div class="panel-body compact table-scroll">
   {% if events %}
   <table class="audit">
     <thead><tr><th>When</th><th>Kind</th><th>Where</th><th>Message</th></tr></thead>
@@ -78,8 +82,8 @@
 </section>
 
 <section class="panel">
-  <h2 style="padding:.85rem 1.1rem">Recent activity</h2>
-  <div style="padding:0 1.1rem 1.1rem">
+  <div class="section-head"><span><span class="summary-icon">{{ icon('clock') }}</span><span><h2>Recent activity</h2><small>Operator and automated actions</small></span></span></div>
+  <div class="panel-body compact table-scroll">
   <table class="audit">
     <thead><tr><th>When</th><th>User</th><th>Action</th><th>Target</th><th>Detail</th><th></th></tr></thead>
     <tbody>

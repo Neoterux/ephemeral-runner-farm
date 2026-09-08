@@ -1,16 +1,19 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}Sign in{% endblock %}
 {% block content %}
 <div class="login-shell">
   <div class="login-card">
-    <div class="brand-lg">runner-farm</div>
-    <div class="tagline">ephemeral podman runners · fleet console</div>
+    <div class="login-brand"><span class="brand-mark" aria-hidden="true">{{ icon('logo') }}</span><span><strong>runner farm</strong><small>operations console</small></span></div>
+    <h1>Welcome back</h1>
+    <div class="tagline">Sign in to monitor and manage your ephemeral runner fleet.</div>
     {% if error %}<div class="banner err">{{ error }}</div>{% endif %}
     <form method="post" action="/login">
-      <label>Username <input name="username" autocomplete="username" autofocus required></label>
-      <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+      <label for="username">Username</label><input id="username" name="username" autocomplete="username" autofocus required>
+      <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required>
       <button type="submit" class="primary">Sign in</button>
     </form>
+    <p class="login-foot"><span class="status-beacon"></span>Ephemeral by design · one job per container</p>
   </div>
 </div>
 {% endblock %}

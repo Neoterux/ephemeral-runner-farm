@@ -1,8 +1,18 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/logo-dark.png">
+    <img alt="ephemeral-runner-farm" src="docs/screenshots/logo-light.png" width="380">
+  </picture>
+</p>
+
 # ephemeral-runner-farm
 
 Self-hosted GitHub Actions runners that run as **ephemeral rootless Podman
 containers** — one job per container, container destroyed afterwards — plus a
 small web UI to manage the fleet and watch disk usage.
+
+The logo mark and wordmark live in [`logo/`](logo/) (SVG, terminal-green,
+`currentColor`-aware).
 
 The design makes two chronic self-hosted-runner problems structurally
 impossible:

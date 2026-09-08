@@ -5,31 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>{% block title %}Fleet{% endblock %} · runner farm</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
 {% include "_icons.html" %}
 {% from "_macros.html" import icon %}
+<a class="skip-link" href="#main-content">Skip to content</a>
 {% if user is defined and user %}
 <header class="topbar">
-  <span class="brand">runner-farm</span>
-  <nav aria-label="Main">
-    <a href="/fleet"    class="{{ 'active' if request.url.path.startswith('/fleet') or request.url.path.startswith('/logs') }}">{{ icon('server') }}Fleet</a>
-    <a href="/disks"    class="{{ 'active' if request.url.path.startswith('/disks') }}">{{ icon('hdd') }}Disks</a>
-    <a href="/health"   class="{{ 'active' if request.url.path == '/health' }}">{{ icon('activity') }}Health</a>
-    <a href="/settings" class="{{ 'active' if request.url.path == '/settings' }}">{{ icon('cpu') }}Settings</a>
-  </nav>
-  <form method="post" action="/logout" class="logout">
-    <span class="who">{{ user.username }}</span>
-    <button type="submit">Sign out</button>
-  </form>
+  <div class="topbar-inner">
+    <a class="brand" href="/fleet" aria-label="Runner Farm home">
+      <span class="brand-mark" aria-hidden="true">{{ icon('logo') }}</span>
+      <span class="brand-copy"><strong>runner farm</strong><small>operations console</small></span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="/fleet"    class="{{ 'active' if request.url.path.startswith('/fleet') or request.url.path.startswith('/logs') }}" {{ 'aria-current="page"' if request.url.path.startswith('/fleet') or request.url.path.startswith('/logs') }}>{{ icon('server') }}<span>Fleet</span></a>
+      <a href="/disks"    class="{{ 'active' if request.url.path.startswith('/disks') }}" {{ 'aria-current="page"' if request.url.path.startswith('/disks') }}>{{ icon('hdd') }}<span>Storage</span></a>
+      <a href="/health"   class="{{ 'active' if request.url.path == '/health' }}" {{ 'aria-current="page"' if request.url.path == '/health' }}>{{ icon('activity') }}<span>Health</span></a>
+      <a href="/settings" class="{{ 'active' if request.url.path == '/settings' }}" {{ 'aria-current="page"' if request.url.path == '/settings' }}>{{ icon('cpu') }}<span>Settings</span></a>
+    </nav>
+    <form method="post" action="/logout" class="logout">
+      <span class="avatar" aria-hidden="true">{{ user.username[0] | upper }}</span>
+      <span class="who">{{ user.username }}</span>
+      <button type="submit" class="quiet">Sign out</button>
+    </form>
+  </div>
 </header>
 {% if user.must_change and request.url.path != '/settings' %}
   <div class="banner warn">{{ icon('alert') }}<span>Your password is a temporary one — <a href="/settings">change it now</a>.</span></div>
 {% endif %}
 {% endif %}
-<main>
+<main id="main-content">
   {% block content %}{% endblock %}
 </main>
 </body>

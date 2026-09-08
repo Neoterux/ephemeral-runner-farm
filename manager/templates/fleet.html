@@ -2,7 +2,31 @@
 {% block title %}Fleet{% endblock %}
 {% from "_macros.html" import icon %}
 {% block content %}
-<h1>Fleet</h1>
+{% set ns = namespace(slots=0, running=0, attention=0) %}
+{% for h in snap.hosts %}
+  {% if h.state %}{% for s in h.state.slots %}
+    {% set ns.slots = ns.slots + 1 %}
+    {% if s.state == 'running' %}{% set ns.running = ns.running + 1 %}{% endif %}
+    {% if s.state in ('offline', 'restarting') %}{% set ns.attention = ns.attention + 1 %}{% endif %}
+  {% endfor %}{% endif %}
+  {% if h.degraded %}{% set ns.attention = ns.attention + 1 %}{% endif %}
+{% endfor %}
+
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Operations / Fleet</p>
+    <h1>Runner fleet</h1>
+    <p class="page-lede">Live capacity, jobs, and lifecycle controls across every host.</p>
+  </div>
+  <div class="live-chip"><span class="dot-live"></span>Live · 5s refresh</div>
+</div>
+
+<section class="stat-grid" aria-label="Fleet summary">
+  <div class="stat-card"><span>Hosts</span><strong>{{ snap.hosts | length }}</strong><small>{{ snap.hosts | selectattr('reachable') | list | length }} reachable</small></div>
+  <div class="stat-card"><span>Runner slots</span><strong>{{ ns.slots }}</strong><small>across the fleet</small></div>
+  <div class="stat-card accent"><span>Jobs running</span><strong>{{ ns.running }}</strong><small>{{ ns.slots - ns.running }} available or paused</small></div>
+  <div class="stat-card {{ 'danger' if ns.attention else '' }}"><span>Needs attention</span><strong>{{ ns.attention }}</strong><small>{{ 'review below' if ns.attention else 'all systems normal' }}</small></div>
+</section>
 
 {% for hid, d in disk.hosts.items() %}
   {% if d.level == 'warn' %}
@@ -16,8 +40,8 @@
 
 <section class="panel">
   <details>
-    <summary><h2>{{ icon('bolt') }} Create runners</h2></summary>
-    <div style="padding:0 1.1rem 1rem">
+    <summary class="panel-summary"><span><span class="summary-icon">{{ icon('bolt') }}</span><span><h2>Create runner slots</h2><small>Add ephemeral capacity to a reachable host</small></span></span><span class="summary-action">Configure</span></summary>
+    <div class="panel-body">
     {% for h in snap.hosts %}
     <form method="post" action="/slots/{{ h.id }}/create" class="create-form">
       <h3>{{ h.id }} <small class="mono">{{ h.address }}</small></h3>
