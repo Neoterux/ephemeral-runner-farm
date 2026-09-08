@@ -1,0 +1,23 @@
+{% from "_macros.html" import icon %}
+{% if logs.error %}
+  <div class="banner err">{{ icon('alert') }}<span>{{ logs.error }}</span></div>
+{% endif %}
+
+<div class="log-cols">
+  <section class="log-pane">
+    <header>
+      {{ icon('box') }} container
+      <span class="pill {{ 's-running' if logs.container_running else 's-stopped' }}">
+        {{ 'running' if logs.container_running else 'between jobs' }}</span>
+      <span class="dim">{{ logs.container | length }} lines</span>
+    </header>
+    <pre class="log-stream">{% for l in logs.container %}{{ l }}
+{% endfor %}</pre>
+  </section>
+
+  <section class="log-pane">
+    <header>{{ icon('clock') }} slot journal <span class="dim">spans restarts</span></header>
+    <pre class="log-stream">{% for l in logs.journal %}{{ l }}
+{% endfor %}</pre>
+  </section>
+</div>

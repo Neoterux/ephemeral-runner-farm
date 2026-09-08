@@ -83,6 +83,10 @@ async def slot_action(host: Host, slot: int, action: str) -> dict[str, Any]:
     return await call(host, "POST", f"/slots/{slot}/{action}")
 
 
+async def slot_logs(host: Host, slot: int, lines: int = 200) -> dict[str, Any]:
+    return await call(host, "GET", f"/slots/{slot}/logs", params={"lines": lines})
+
+
 async def slot_upsert(host: Host, slot: int, body: dict[str, Any]) -> dict[str, Any]:
     return await call(host, "PUT", f"/slots/{slot}", json=body)
 

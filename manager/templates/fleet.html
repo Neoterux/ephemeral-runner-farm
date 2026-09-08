@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Fleet{% endblock %}
+{% from "_macros.html" import icon %}
 {% block content %}
 <h1>Fleet</h1>
 
@@ -15,7 +16,7 @@
 
 <section class="panel">
   <details>
-    <summary><h2>Create runners</h2></summary>
+    <summary><h2>{{ icon('bolt') }} Create runners</h2></summary>
     <div style="padding:0 1.1rem 1rem">
     {% for h in snap.hosts %}
     <form method="post" action="/slots/{{ h.id }}/create" class="create-form">
@@ -26,7 +27,7 @@
       <label>Image tag <input name="image_tag" value="latest" size="12"></label>
       <label>Memory <input name="memory" value="12g" size="5"></label>
       <label>CPUs <input name="cpus" value="2" size="3"></label>
-      <button type="submit" class="primary" {{ 'disabled' if not h.reachable }}>Create on {{ h.id }}</button>
+      <button type="submit" class="primary" {{ "disabled" if not h.reachable }}>{{ icon("bolt") }} Create on {{ h.id }}</button>
     </form>
     {% endfor %}
     </div>

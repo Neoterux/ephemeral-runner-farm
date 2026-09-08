@@ -30,6 +30,38 @@ def _host_state(hid, slots):
             "kernel": "5.14.0-503.el9", "slots": slots, "time": time.time()}
 
 
+def slot_logs(host_id, slot, lines):
+    ts = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+    return {
+        "slot": slot, "container_running": True,
+        "container": [
+            f"{ts}  √ Connected to GitHub",
+            f"{ts}  Current runner version: '2.337.0'",
+            f"{ts}  {time.strftime('%Y-%m-%d %H:%M:%SZ')}: Listening for Jobs",
+            f"{ts}  {time.strftime('%Y-%m-%d %H:%M:%SZ')}: Running job: build-backend",
+            f"{ts}  ##[group]Run actions/checkout@v4",
+            f"{ts}  Syncing repository: {host_id.replace('-', '/')}/service",
+            f"{ts}  ##[endgroup]",
+            f"{ts}  ##[group]Run actions/setup-node@v4",
+            f"{ts}  Found in cache @ /home/runner/_work/_tool/node/20.18.0/x64",
+            f"{ts}  ##[endgroup]",
+            f"{ts}  $ pnpm install --frozen-lockfile",
+            f"{ts}  Lockfile is up to date, resolution step is skipped",
+            f"{ts}  Packages: +812 reused, 0 downloaded",
+            f"{ts}  $ pnpm run build",
+            f"{ts}  vite v5.4.8 building for production...",
+            f"{ts}  ✓ 1284 modules transformed.",
+        ][-lines:],
+        "journal": [
+            f"{ts} {host_id} systemd[993]: Starting sp-runner@{slot}.service...",
+            f"{ts} {host_id} sp-runner-prestart[41]: [prestart] slot {slot}: token minted for {host_id}-slot-{slot}",
+            f"{ts} {host_id} systemd[993]: Started sp-runner@{slot}.service.",
+            f"{ts} {host_id} sp-runner-run[52]: [entrypoint] configuring {host_id}-slot-{slot}",
+        ][-lines:],
+        "time": time.time(),
+    }
+
+
 def load() -> None:
     now = time.time()
     hosts = [h.id for h in CFG.hosts][:2] or ["build-farm", "build-farm-2"]

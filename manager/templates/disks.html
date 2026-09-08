@@ -1,14 +1,15 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}Disks{% endblock %}
 {% block content %}
-<h1>Disk usage</h1>
+<h1>{{ icon('hdd') }} Disk usage</h1>
 <p class="meta">watermarks — warn {{ disk.watermarks.warn }}% · prune {{ disk.watermarks.prune }}% · freeze {{ disk.watermarks.freeze }}%</p>
 
 {% for hid, d in disk.hosts.items() %}
 <section class="panel">
   <div class="host-head">
-    <h2>{{ hid }}</h2>
-    <form method="post" action="/hosts/{{ hid }}/prune"><button>podman system prune</button></form>
+    <h2>{{ icon('server') }} {{ hid }}</h2>
+    <form method="post" action="/hosts/{{ hid }}/prune"><button>{{ icon('broom') }} podman system prune</button></form>
   </div>
 
   <div style="padding:.9rem 1.1rem">

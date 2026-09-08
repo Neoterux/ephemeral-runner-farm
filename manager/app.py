@@ -183,6 +183,25 @@ async def settings_page(request: Request, user: auth.CurrentUser = Depends(_user
     return _tmpl(request, "settings.html", **await _settings_ctx(request, user))
 
 
+@app.get("/logs/{host_id}/{slot}", response_class=HTMLResponse)
+async def slot_logs_page(request: Request, host_id: str, slot: int, lines: int = 200,
+                         user: auth.CurrentUser = Depends(_user)) -> HTMLResponse:
+    host = _require_host(host_id)
+    lines = max(20, min(lines, 2000))
+    if os.environ.get("FARM_DEMO"):
+        import demo
+        logs = demo.slot_logs(host_id, slot, lines)
+    else:
+        try:
+            logs = await agentclient.slot_logs(host, slot, lines)
+        except agentclient.AgentError as exc:
+            logs = {"slot": slot, "container_running": False, "error": str(exc),
+                    "container": [], "journal": []}
+    partial = request.headers.get("hx-request") == "true"
+    return _tmpl(request, "_logs.html" if partial else "logs.html",
+                 user=user, host_id=host_id, slot=slot, lines=lines, logs=logs)
+
+
 async def _settings_ctx(request: Request, user: auth.CurrentUser) -> dict[str, Any]:
     try:
         groups = await APP.list_runner_groups()

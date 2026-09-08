@@ -354,6 +354,25 @@ async def journal(unit: str, lines: int = 100) -> dict[str, Any]:
     return {"unit": unit, "lines": (out or err).splitlines()}
 
 
+@app.get("/slots/{n}/logs", dependencies=[Depends(require_token)])
+async def slot_logs(n: int, lines: int = 200) -> dict[str, Any]:
+    """Last <lines> of the current job container plus the slot's systemd journal
+    (which spans restarts and shows the prestart/token phase)."""
+    lines = max(10, min(lines, 2000))
+    name = f"sp-runner-{n}"
+    _, clog, cerr = await run("podman", "logs", "--tail", str(lines), "--timestamps", name, timeout=15)
+    _, jout, jerr = await run("journalctl", "--user", "-u", f"sp-runner@{n}.service",
+                              "-n", str(lines), "--no-pager", "-o", "short-iso", timeout=20)
+    rc, _, _ = await run("podman", "container", "exists", name, timeout=5)
+    return {
+        "slot": n,
+        "container_running": rc == 0,
+        "container": (clog or cerr or "(no container — between jobs)").splitlines(),
+        "journal": (jout or jerr or "").splitlines(),
+        "time": time.time(),
+    }
+
+
 @app.post("/internal/slot-token/{n}", dependencies=[Depends(require_loopback)])
 async def slot_token(n: int, body: dict[str, Any]) -> JSONResponse:
     """Called by sp-runner-prestart (loopback). Proxies to the manager, which

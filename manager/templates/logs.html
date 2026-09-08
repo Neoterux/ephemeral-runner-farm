@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}logs · {{ host_id }} #{{ slot }}{% endblock %}
+{% block content %}
+<h1>{{ icon('terminal') }} {{ host_id }} <span class="dim">/</span> slot&nbsp;#{{ slot }}</h1>
+
+<div class="log-toolbar">
+  <a href="/fleet" class="btn">{{ icon('server') }}fleet</a>
+  <span class="sep"></span>
+  <label class="inline">lines
+    <select id="lines" onchange="reload()">
+      {% for n in [100, 200, 500, 1000] %}<option value="{{ n }}" {{ 'selected' if n == lines }}>{{ n }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="btn" onclick="reload()">{{ icon('rotate') }}refresh</button>
+  <label class="inline"><input type="checkbox" id="auto" onchange="toggleAuto()"> auto&nbsp;5s</label>
+  <span class="log-status" id="status"></span>
+</div>
+
+<div id="logbox">
+  {% include "_logs.html" %}
+</div>
+
+<script>
+  const host = {{ host_id | tojson }}, slot = {{ slot }};
+  async function reload() {
+    const n = document.getElementById('lines').value;
+    const st = document.getElementById('status');
+    st.textContent = 'loading…';
+    try {
+      const r = await fetch(`/logs/${encodeURIComponent(host)}/${slot}?lines=${n}`, {headers: {'HX-Request': 'true'}});
+      document.getElementById('logbox').innerHTML = await r.text();
+      st.textContent = 'updated ' + new Date().toLocaleTimeString();
+      document.querySelectorAll('.log-stream').forEach(el => el.scrollTop = el.scrollHeight);
+    } catch (e) { st.textContent = 'error: ' + e; }
+  }
+  let timer = null;
+  function toggleAuto() {
+    clearInterval(timer); timer = null;
+    if (document.getElementById('auto').checked) timer = setInterval(reload, 5000);
+  }
+  document.querySelectorAll('.log-stream').forEach(el => el.scrollTop = el.scrollHeight);
+</script>
+{% endblock %}

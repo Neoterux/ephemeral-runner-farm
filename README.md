@@ -31,6 +31,11 @@ no single host is a build-blocking point of failure.
 
 ![Disks page](docs/screenshots/disks.png)
 
+**Logs** — last _n_ lines of a slot's current job container plus its systemd
+journal (which spans restarts), with auto-refresh:
+
+![Logs page](docs/screenshots/logs.png)
+
 Try the UI with no hosts and synthetic data:
 
 ```bash

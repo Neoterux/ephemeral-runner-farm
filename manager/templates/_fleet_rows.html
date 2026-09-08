@@ -1,21 +1,23 @@
+{% from "_macros.html" import icon %}
 {% macro pill(state) -%}
 <span class="pill s-{{ state }}">{{ state }}</span>
 {%- endmacro %}
 
 <p class="meta">
   <span class="dot-live"></span>reconciled {{ ((now - (snap.meta.reconciled_at or now)) | round | int) }}s ago
-  · {{ snap.meta.github_runner_count or 0 }} runners on GitHub
+  · {{ icon('github') }} {{ snap.meta.github_runner_count or 0 }} runners
   {% if snap.meta.github_error %}· <span class="err-text">GitHub: {{ snap.meta.github_error }}</span>{% endif %}
 </p>
 
 {% for h in snap.hosts %}
 <section class="panel host {{ 'degraded' if h.degraded }}">
   <div class="host-head">
-    <h2>{{ h.id }} <small>{{ h.address }}</small></h2>
+    <h2>{{ icon('server') }} {{ h.id }} <small>{{ h.address }}</small></h2>
     <span class="host-meta">
       {% if not h.enabled %}{{ pill('stopped') }} disabled
       {% elif h.reachable %}{{ pill('idle') }}
-        {% if h.state %}podman {{ h.state.podman.split(' ')[-1] if h.state.podman else '?' }} · kernel {{ h.state.kernel }}{% endif %}
+        {% if h.state %}{{ icon('box') }} podman {{ h.state.podman.split(' ')[-1] if h.state.podman else '?' }}
+        · {{ icon('cpu') }} {{ h.state.kernel }}{% endif %}
       {% else %}{{ pill('offline') }} agent unreachable{% if h.reaped %} · runners reaped{% endif %}
       {% endif %}
     </span>
@@ -27,7 +29,7 @@
   <table class="slots">
     <thead><tr>
       <th>Slot</th><th>State</th><th>Job</th><th>Labels</th><th>Group</th>
-      <th>Image</th><th class="num">↻</th><th>GitHub</th><th></th>
+      <th>Image</th><th class="num">{{ icon('rotate') }}</th><th>GitHub</th><th></th>
     </tr></thead>
     <tbody>
     {% for s in h.state.slots %}
@@ -36,21 +38,22 @@
         <td>#{{ s.slot }}</td>
         <td>{{ pill(s.state) }}</td>
         <td class="job">{% if s.job %}<code>{{ s.job }}</code>{% else %}<span class="dim">idle</span>{% endif %}</td>
-        <td class="labels" title="{{ s.labels }}">{{ extra or s.labels }}</td>
+        <td class="labels" title="{{ s.labels }}">{{ icon('box') }}{{ extra or s.labels }}</td>
         <td class="mono muted-cell">{{ s.group or '—' }}</td>
-        <td class="mono muted-cell">{{ s.image_tag }}</td>
+        <td class="muted-cell"><span class="img-tag">{{ icon('layers') }}{{ s.image_tag }}</span></td>
         <td class="num {{ 'warn-text' if s.restarts > 5 }}" title="restarts">{{ s.restarts }}</td>
         <td class="gh">
-          {% if s.github %}<span class="{{ 'gh-on' if s.github.status == 'online' }}">{{ s.github.status }}</span>{% if s.github.busy %} · busy{% endif %}
+          {% if s.github %}{{ icon('github') }}<span class="{{ 'gh-on' if s.github.status == 'online' }}">{{ s.github.status }}</span>{% if s.github.busy %} · busy{% endif %}
           {% else %}<span class="dim">unregistered</span>{% endif %}
         </td>
         <td class="actions">
-          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/start"><button {{ 'disabled' if s.state in ('idle','running','restarting') }}>start</button></form>
-          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/drain"><button title="stop after the current job">drain</button></form>
-          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/stop"><button class="danger" title="stop now — cancels a running job">stop</button></form>
-          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/restart"><button>restart</button></form>
-          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/clear-cache"><button title="wipe this slot's tool cache">clear&nbsp;cache</button></form>
-          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/delete" onsubmit="return confirm('Delete slot {{ s.slot }} on {{ h.id }}?')"><button class="danger" title="delete slot">del</button></form>
+          <a class="btn" href="/logs/{{ h.id }}/{{ s.slot }}" title="view logs">{{ icon('terminal') }}logs</a>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/start"><button {{ 'disabled' if s.state in ('idle','running','restarting') }} title="start">{{ icon('play') }}</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/drain"><button title="stop after the current job">{{ icon('drain') }}</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/stop"><button class="danger" title="stop now — cancels a running job">{{ icon('stop') }}</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/restart"><button title="restart">{{ icon('rotate') }}</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/clear-cache"><button title="wipe this slot's tool cache">{{ icon('broom') }}</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/delete" onsubmit="return confirm('Delete slot {{ s.slot }} on {{ h.id }}?')"><button class="danger" title="delete slot">{{ icon('trash') }}</button></form>
         </td>
       </tr>
     {% endfor %}

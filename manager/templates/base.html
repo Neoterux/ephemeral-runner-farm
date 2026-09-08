@@ -9,14 +9,16 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
+{% include "_icons.html" %}
+{% from "_macros.html" import icon %}
 {% if user is defined and user %}
 <header class="topbar">
   <span class="brand">runner-farm</span>
   <nav aria-label="Main">
-    <a href="/fleet"    class="{{ 'active' if request.url.path.startswith('/fleet') }}">Fleet</a>
-    <a href="/disks"    class="{{ 'active' if request.url.path.startswith('/disks') }}">Disks</a>
-    <a href="/health"   class="{{ 'active' if request.url.path == '/health' }}">Health</a>
-    <a href="/settings" class="{{ 'active' if request.url.path == '/settings' }}">Settings</a>
+    <a href="/fleet"    class="{{ 'active' if request.url.path.startswith('/fleet') or request.url.path.startswith('/logs') }}">{{ icon('server') }}Fleet</a>
+    <a href="/disks"    class="{{ 'active' if request.url.path.startswith('/disks') }}">{{ icon('hdd') }}Disks</a>
+    <a href="/health"   class="{{ 'active' if request.url.path == '/health' }}">{{ icon('activity') }}Health</a>
+    <a href="/settings" class="{{ 'active' if request.url.path == '/settings' }}">{{ icon('cpu') }}Settings</a>
   </nav>
   <form method="post" action="/logout" class="logout">
     <span class="who">{{ user.username }}</span>
@@ -24,7 +26,7 @@
   </form>
 </header>
 {% if user.must_change and request.url.path != '/settings' %}
-  <div class="banner warn">Your password is a temporary one — <a href="/settings">change it now</a>.</div>
+  <div class="banner warn">{{ icon('alert') }}<span>Your password is a temporary one — <a href="/settings">change it now</a>.</span></div>
 {% endif %}
 {% endif %}
 <main>
