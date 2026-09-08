@@ -1,0 +1,61 @@
+# Web manager config. Installed to ~ghrunner/.config/sp-runner/manager.toml
+# on the manager host only. Mode 0600. deploy.sh fills in secrets.
+
+[server]
+# Cookie-signing key. `openssl rand -base64 48`
+secret_key = "REPLACE_WITH_RANDOM_48_BYTES_BASE64"
+# Session lifetime.
+session_hours = 12
+# Set true only when the UI is served over https (behind a TLS proxy).
+secure_cookies = false
+
+[github]
+org = "your-org"
+# GitHub App created on the org with:
+#   Organization permissions -> Self-hosted runners: Read and write
+#   Organization permissions -> Administration: Read-only  (for runner groups)
+app_id = 0
+installation_id = 0
+private_key_file = "/home/ghrunner/.config/sp-runner/github-app.pem"
+
+[watermarks]
+# Percent-used of the runner-data filesystem (first entry in the agent's
+# disk_mounts). See docs/ARCHITECTURE.md.
+warn = 75
+prune = 85
+freeze = 92
+
+[fleet]
+# How long a host may be unreachable before its GitHub runner registrations
+# are reaped so queued jobs stop targeting it.
+reap_grace_minutes = 15
+# Poll cadence for agent state and GitHub runner list.
+reconcile_seconds = 30
+# Disk sample cadence (feeds the sparklines).
+disk_sample_seconds = 60
+# Keep this many days of disk samples.
+disk_history_days = 30
+
+# One block per host. The local host uses loopback + no TLS; remote hosts use
+# https with a pinned certificate fingerprint (deploy.sh prints it).
+# Every agent — local included — serves HTTPS with a self-signed cert that the
+# manager pins by SHA-256 fingerprint. deploy.sh fills the fingerprints in.
+[[hosts]]
+id = "build-farm"
+address = "127.0.0.1"
+agent_url = "https://127.0.0.1:8181"
+# Bearer the manager presents to this agent (== agent listen_token).
+agent_token = "REPLACE"
+# Bearer this agent presents back to the manager (== agent manager_token).
+manager_token = "REPLACE"
+agent_tls_fingerprint = "SET_BY_deploy.sh_push"
+enabled = true
+
+[[hosts]]
+id = "build-farm-2"
+address = "10.0.1.20"
+agent_url = "https://10.0.1.20:8181"
+agent_token = "REPLACE"
+manager_token = "REPLACE"
+agent_tls_fingerprint = "SET_BY_deploy.sh_push"
+enabled = false

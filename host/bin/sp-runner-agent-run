@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# ExecStart for sp-runner-agent.service. Serves the agent API over HTTPS with
+# the host's self-signed cert (pinned by fingerprint on the manager side).
+set -euo pipefail
+
+cfg_dir="${XDG_CONFIG_HOME:-$HOME/.config}/sp-runner"
+app_dir="$HOME/sp-runner-agent"
+cert="${cfg_dir}/agent.crt"
+key="${cfg_dir}/agent.key"
+
+[[ -f "$cert" && -f "$key" ]] || { echo "[agent] missing $cert / $key — run deploy.sh push" >&2; exit 1; }
+
+cd "$app_dir"
+exec .venv/bin/python -m uvicorn app:app \
+    --host 0.0.0.0 --port 8181 --no-access-log \
+    --ssl-keyfile "$key" --ssl-certfile "$cert"

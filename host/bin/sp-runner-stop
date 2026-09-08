@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# ExecStop for sp-runner@<slot>.service.
+#
+# `systemctl --user stop` is the immediate stop (cancels a running job). Give
+# the runner a chance to tell GitHub it is going away so the job can be retried
+# cleanly rather than hanging until the 10-minute server-side timeout.
+set -euo pipefail
+
+slot="${1:?usage: sp-runner-stop <slot>}"
+name="sp-runner-${slot}"
+
+# SIGINT -> the runner treats it as "finish current step then deregister".
+podman kill --signal INT "${name}" >/dev/null 2>&1 || true
+
+for _ in $(seq 1 30); do
+    podman container exists "${name}" || exit 0
+    sleep 1
+done
+
+podman rm -f "${name}" >/dev/null 2>&1 || true

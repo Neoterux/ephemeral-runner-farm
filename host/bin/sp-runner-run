@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# ExecStart for sp-runner@<slot>.service. Runs one ephemeral runner container.
+#
+# --rm plus _work living inside the container is the whole fault-tolerance /
+# no-garbage story: whatever happens to this process, the next start is a clean
+# container. Only the two cache volumes survive.
+set -euo pipefail
+
+slot="${1:?usage: sp-runner-run <slot>}"
+env_file="${XDG_RUNTIME_DIR:?}/sp-runner/slot-${slot}.env"
+[[ -f "${env_file}" ]] || { echo "[run] missing ${env_file} (prestart failed?)" >&2; exit 1; }
+
+# shellcheck disable=SC1090
+source "${env_file}"
+: "${IMAGE_TAG:?}" "${SLOT_MEMORY:?}" "${SLOT_CPUS:?}"
+
+# Defensive: a bare number for memory means GB (podman would read it as bytes).
+[[ "${SLOT_MEMORY}" =~ ^[0-9]+$ ]] && SLOT_MEMORY="${SLOT_MEMORY}g"
+
+name="sp-runner-${slot}"
+podman rm -f "${name}" >/dev/null 2>&1 || true
+
+# exec so systemd tracks podman directly and signals reach it cleanly.
+exec podman run --rm --name "${name}" \
+    --env-file "${env_file}" \
+    --memory "${SLOT_MEMORY}" \
+    --memory-swap "${SLOT_MEMORY}" \
+    --cpus "${SLOT_CPUS}" \
+    --pids-limit 4096 \
+    --security-opt label=disable \
+    --device /dev/fuse \
+    -v "sp-tool-${slot}:/home/runner/_work/_tool" \
+    -v "sp-pnpm:/home/runner/.local/share/pnpm" \
+    "localhost/sp-runner:${IMAGE_TAG}"

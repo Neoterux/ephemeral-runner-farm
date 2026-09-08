@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Health{% endblock %}
+{% block content %}
+<h1>Health</h1>
+
+<section class="panel">
+  <h2>Hosts</h2>
+  <table class="kv">
+    {% for h in snap.hosts %}
+    <tr>
+      <th>{{ h.id }}</th>
+      <td>
+        {% if h.reachable %}<span class="pill s-idle">up</span> last seen just now
+        {% elif h.degraded %}<span class="pill s-offline">degraded</span>
+          since {{ ((now - h.unreachable_since) / 60) | round }} min ago
+          {{ '· runners reaped' if h.reaped }}
+        {% else %}<span class="pill s-stopped">disabled</span>{% endif %}
+        {% if h.error %}<div class="err-text">{{ h.error }}</div>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Orphaned runner registrations</h2>
+  <p class="dim">GitHub runners named <code>&lt;host&gt;-slot-&lt;n&gt;</code> that are offline and have no live container behind them.</p>
+  {% if snap.meta.orphans %}
+  <table class="slots">
+    <thead><tr><th>Name</th><th>Host</th><th>Slot</th><th>Runner ID</th><th></th></tr></thead>
+    <tbody>
+    {% for o in snap.meta.orphans %}
+    <tr>
+      <td><code>{{ o.name }}</code></td><td>{{ o.host }}</td><td>#{{ o.slot }}</td><td>{{ o.id }}</td>
+      <td>
+        <form method="post" action="/health/reap">
+          <input type="hidden" name="runner_id" value="{{ o.id }}">
+          <input type="hidden" name="name" value="{{ o.name }}">
+          <button class="danger">remove</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="dim">None.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Recent activity</h2>
+  <table class="audit">
+    <thead><tr><th>When</th><th>User</th><th>Action</th><th>Target</th><th>Detail</th><th></th></tr></thead>
+    <tbody>
+    {% for a in audit %}
+    <tr class="{{ 'row-err' if a['result'] == 'error' or a['result'] == 'fail' }}">
+      <td>{{ a['ts'] | int | datetimeformat }}</td>
+      <td>{{ a['username'] }}</td>
+      <td>{{ a['action'] }}</td>
+      <td>{{ a['target'] or '' }}</td>
+      <td class="detail">{{ a['detail'] or '' }}</td>
+      <td>{{ a['result'] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

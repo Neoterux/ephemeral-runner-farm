@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Disks{% endblock %}
+{% block content %}
+<h1>Disk usage</h1>
+<p class="meta">watermarks: warn {{ disk.watermarks.warn }}% · prune {{ disk.watermarks.prune }}% · freeze {{ disk.watermarks.freeze }}%</p>
+
+{% for hid, d in disk.hosts.items() %}
+<section class="panel">
+  <div class="host-head">
+    <h2>{{ hid }}</h2>
+    <form method="post" action="/hosts/{{ hid }}/prune"><button>podman system prune</button></form>
+  </div>
+
+  {% for m in d.all_mounts %}
+  <div class="gauge-row">
+    <div class="gauge-label">
+      <code>{{ m.mount }}</code>
+      <span>{{ (m.used_bytes / 1073741824) | round(1) }} / {{ (m.total_bytes / 1073741824) | round(1) }} GiB</span>
+    </div>
+    <div class="gauge">
+      <div class="gauge-fill l-{{ 'freeze' if m.used_pct >= disk.watermarks.freeze else 'prune' if m.used_pct >= disk.watermarks.prune else 'warn' if m.used_pct >= disk.watermarks.warn else 'ok' }}"
+           style="width: {{ m.used_pct }}%"></div>
+    </div>
+    <div class="gauge-pct">{{ m.used_pct }}%</div>
+  </div>
+  {% if loop.first %}
+  <canvas class="spark" data-host="{{ hid }}" data-mount="{{ m.mount }}" height="90"></canvas>
+  {% endif %}
+  {% endfor %}
+
+  {% if d.podman_df %}
+  <details class="podman-df">
+    <summary>podman storage</summary>
+    <table class="kv">
+      {% for row in d.podman_df.get('Images', []) %}{% endfor %}
+      <tr><th>Images</th><td>{{ d.podman_df.get('Images', []) | length }} · reclaimable shown in <code>podman system df</code></td></tr>
+      <tr><th>Volumes</th><td>
+        {% for v in d.podman_df.get('Volumes', []) %}
+          <div><code>{{ v.VolumeName }}</code> — {{ (v.Size / 1073741824) | round(2) if v.Size is number else v.Size }} GiB{{ ' (in use)' if v.Links and v.Links > 0 }}</div>
+        {% endfor %}
+      </td></tr>
+    </table>
+  </details>
+  {% endif %}
+</section>
+{% else %}
+<p class="dim">No disk samples yet — the first one lands within {{ cfg.disk_sample_seconds }}s of startup.</p>
+{% endfor %}
+
+<script src="/static/app.js" defer></script>
+{% endblock %}

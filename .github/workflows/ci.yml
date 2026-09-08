@@ -1,0 +1,60 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: byte-compile python
+        run: python -m py_compile agent/*.py manager/*.py
+
+      - name: import check (manager + agent)
+        run: |
+          python -m venv .venv
+          .venv/bin/pip -q install -r manager/requirements.txt -r agent/requirements.txt
+          cat > /tmp/m.toml <<'EOF'
+          [server]
+          secret_key = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          [github]
+          org = "x"
+          app_id = 0
+          installation_id = 0
+          private_key_file = "/tmp/none.pem"
+          [[hosts]]
+          id = "h"
+          address = "127.0.0.1"
+          agent_url = "https://127.0.0.1:8181"
+          agent_token = "a"
+          manager_token = "b"
+          agent_tls_fingerprint = "x"
+          enabled = true
+          EOF
+          cat > /tmp/a.toml <<'EOF'
+          host_id = "h"
+          github_url = "https://github.com/x"
+          manager_url = "http://127.0.0.1:8080"
+          manager_token = "b"
+          listen_token = "a"
+          EOF
+          SP_MANAGER_CONFIG=/tmp/m.toml STATE_DIRECTORY=/tmp/st .venv/bin/python -c "import sys; sys.path.insert(0,'manager'); import app; print('manager routes:', len(app.app.routes))"
+          SP_AGENT_CONFIG=/tmp/a.toml .venv/bin/python -c "import sys; sys.path.insert(0,'agent'); import app; print('agent routes:', len(app.app.routes))"
+
+      - name: shell syntax
+        run: |
+          for f in deploy.sh host/*.sh host/bin/* containerfile/*.sh migration/*.sh; do
+            bash -n "$f" && echo "ok $f"
+          done
+
+      - name: no secrets committed
+        run: |
+          ! git grep -nE 'BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|github_pat_[A-Za-z0-9_]{20}|ghp_[A-Za-z0-9]{36}' -- . \
+            || { echo "possible secret committed"; exit 1; }

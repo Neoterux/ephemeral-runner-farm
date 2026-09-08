@@ -1,0 +1,63 @@
+{% macro state_pill(state) -%}
+  <span class="pill s-{{ state }}">{{ state }}</span>
+{%- endmacro %}
+
+<p class="meta">
+  reconciled {{ ((now - (snap.meta.reconciled_at or now)) | round) }}s ago ·
+  {{ snap.meta.github_runner_count or 0 }} runners on GitHub
+  {% if snap.meta.github_error %}· <span class="err-text">GitHub: {{ snap.meta.github_error }}</span>{% endif %}
+</p>
+
+{% for h in snap.hosts %}
+<section class="panel host {{ 'degraded' if h.degraded }}">
+  <div class="host-head">
+    <h2>{{ h.id }} <small>{{ h.address }}</small></h2>
+    <span>
+      {% if not h.enabled %}<span class="pill s-stopped">disabled</span>
+      {% elif h.reachable %}<span class="pill s-idle">agent up</span>
+        {% if h.state %}· podman {{ h.state.podman }} · kernel {{ h.state.kernel }}{% endif %}
+      {% else %}<span class="pill s-offline">agent unreachable</span>
+        {% if h.reaped %}· runners reaped{% endif %}
+      {% endif %}
+    </span>
+  </div>
+  {% if h.error %}<p class="err-text">{{ h.error }}</p>{% endif %}
+
+  {% if h.state and h.state.slots %}
+  <table class="slots">
+    <thead><tr>
+      <th>Slot</th><th>State</th><th>Job</th><th>Labels</th><th>Group</th>
+      <th>Image</th><th>Restarts</th><th>GitHub</th><th>Actions</th>
+    </tr></thead>
+    <tbody>
+    {% for s in h.state.slots %}
+      <tr>
+        <td>#{{ s.slot }}</td>
+        <td>{{ state_pill(s.state) }}</td>
+        <td class="job">{% if s.job %}<code>{{ s.job }}</code>{% else %}—{% endif %}</td>
+        <td class="labels">{{ s.labels }}</td>
+        <td>{{ s.group or '—' }}</td>
+        <td>{{ s.image_tag }}</td>
+        <td class="{{ 'warn-text' if s.restarts > 5 }}">{{ s.restarts }}</td>
+        <td>
+          {% if s.github %}
+            {{ s.github.status }}{{ ' · busy' if s.github.busy }}
+          {% else %}<span class="dim">not registered</span>{% endif %}
+        </td>
+        <td class="actions">
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/start"><button {{ 'disabled' if s.state in ('idle','running','restarting') }}>start</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/drain"><button title="stop after current job">drain</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/stop"><button class="danger" title="stop now, cancels running job">stop</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/restart"><button>restart</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/clear-cache"><button title="wipe this slot's tool cache">clear&nbsp;cache</button></form>
+          <form method="post" action="/slots/{{ h.id }}/{{ s.slot }}/delete" onsubmit="return confirm('Delete slot {{ s.slot }} on {{ h.id }} entirely?')"><button class="danger">delete</button></form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% elif h.reachable %}
+    <p class="dim">No slots configured on this host yet.</p>
+  {% endif %}
+</section>
+{% endfor %}

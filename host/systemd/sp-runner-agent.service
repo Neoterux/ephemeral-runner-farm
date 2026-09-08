@@ -1,0 +1,23 @@
+# Per-host agent: the only component that touches this host's systemd/podman.
+# User unit for the ghrunner account.
+[Unit]
+Description=SP runner farm agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=XDG_RUNTIME_DIR=%t
+Environment=SP_AGENT_CONFIG=%h/.config/sp-runner/agent.toml
+WorkingDirectory=%h/sp-runner-agent
+ExecStart=%h/.local/bin/sp-runner-agent-run
+Restart=always
+RestartSec=5
+
+# Drives systemctl --user + podman as this user; no elevated access. Sandboxing
+# is kept light because podman needs broad access to the user's own home.
+NoNewPrivileges=yes
+ProtectSystem=yes
+
+[Install]
+WantedBy=default.target

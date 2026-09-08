@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+
+<section class="panel">
+  <h2>Change your password</h2>
+  {% if pw_error %}<div class="banner err">{{ pw_error }}</div>{% endif %}
+  <form method="post" action="/password" class="stack">
+    <label>Current password <input type="password" name="current" autocomplete="current-password" required></label>
+    <label>New password <input type="password" name="new" autocomplete="new-password" minlength="12" required></label>
+    <label>Confirm <input type="password" name="confirm" autocomplete="new-password" minlength="12" required></label>
+    <button type="submit">Update password</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>GitHub App</h2>
+  <table class="kv">
+    <tr><th>Org</th><td>{{ cfg.gh_org }}</td></tr>
+    <tr><th>App ID</th><td>{{ cfg.gh_app_id }}</td></tr>
+    <tr><th>Installation</th><td>{{ cfg.gh_installation_id }}</td></tr>
+    <tr><th>Status</th><td>
+      {% if gh_ok %}<span class="pill s-idle">token OK</span>
+      {% else %}<span class="pill s-offline">error</span> <span class="err-text">{{ gh_err }}</span>{% endif %}
+    </td></tr>
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Runner groups</h2>
+  <datalist id="rg-list">
+    {% for g in runner_groups %}<option value="{{ g.name }}">{% endfor %}
+  </datalist>
+  {% if runner_groups %}
+  <table class="kv">
+    {% for g in runner_groups %}
+    <tr><th>{{ g.name }}</th><td>id {{ g.id }} · visibility {{ g.visibility }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="dim">None listed (the App may lack Administration: read — non-fatal).</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Hosts</h2>
+  <p class="dim">Hosts are defined in <code>manager.toml</code>; edit there and restart the manager to change them.</p>
+  <table class="kv">
+    {% for h in cfg.hosts %}
+    <tr><th>{{ h.id }}</th><td>
+      {{ h.agent_url }} · {{ 'enabled' if h.enabled else 'disabled' }}
+      {% if h.agent_tls_fingerprint %}· pinned{% endif %}
+    </td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,55 @@
+# Ephemeral GitHub Actions runner image for the your-org build farm.
+#
+# The official image (ghcr.io/actions/actions-runner) is unreachable from these
+# hosts — the org network throttles ghcr.io's blob CDN to a few hundred B/s. So
+# we build the equivalent ourselves from Docker Hub's ubuntu (which pulls fine)
+# plus the runner release tarball, which build.sh stages into this directory
+# (downloaded once on a host that CAN reach GitHub's asset CDN, e.g. build-farm
+# or the workstation).
+#
+# Language toolchains (Java, Node, pnpm) are still provisioned at job time by
+# setup-java / setup-node / setup-pnpm into the persisted _tool cache volume.
+FROM docker.io/library/ubuntu:22.04
+
+ARG RUNNER_VERSION=2.337.0
+ARG RUNNER_ARCH=x64
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    TZ=America/Guayaquil \
+    RUNNER_ALLOW_RUNASROOT=0
+
+# Baseline tools + the .NET runtime libs the runner agent needs
+# (matches actions/runner bin/installdependencies.sh for jammy).
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates curl wget jq git git-lfs \
+        unzip zip zstd xz-utils openssh-client rsync gnupg \
+        locales tzdata sudo \
+        libkrb5-3 zlib1g libicu70 liblttng-ust1 libssl3 \
+        build-essential python3 python3-venv python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen \
+    && locale-gen \
+    && useradd -m -u 1001 runner \
+    && echo 'runner ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/runner \
+    && chmod 0440 /etc/sudoers.d/runner
+
+# Runner agent from the staged tarball (build.sh puts it here).
+COPY actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz /tmp/runner.tar.gz
+RUN mkdir -p /home/runner \
+    && tar xzf /tmp/runner.tar.gz -C /home/runner \
+    && rm /tmp/runner.tar.gz \
+    && mkdir -p /home/runner/_work/_tool /home/runner/.local/share/pnpm/store \
+    && printf 'store-dir=/home/runner/.local/share/pnpm/store\n' > /home/runner/.npmrc \
+    && chown -R runner:runner /home/runner
+
+COPY --chmod=0755 entrypoint.sh /usr/local/bin/sp-runner-entrypoint
+
+USER runner
+WORKDIR /home/runner
+
+# Registers an ephemeral runner, runs one job, deregisters on exit. systemd
+# (Restart=always) starts the next container.
+ENTRYPOINT ["/usr/local/bin/sp-runner-entrypoint"]

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Periodic garbage collection for a runner host. Driven by sp-runner-gc.timer.
+#
+# With ephemeral --rm containers there is very little to collect, but three
+# things still accumulate slowly and this keeps them in check:
+#   - dangling images left by `podman build` when the runner image is rebuilt
+#   - the rare exited container from a crash before --rm fired
+#   - per-slot tool caches for slots that have been removed or sat idle for long
+#
+# Cache volumes for *live* slots are never touched here.
+set -euo pipefail
+
+cfg_dir="${XDG_CONFIG_HOME:-$HOME/.config}/sp-runner"
+idle_days="${SP_TOOLCACHE_IDLE_DAYS:-14}"
+
+log() { printf '[gc %(%FT%T%z)T] %s\n' -1 "$*"; }
+
+log "podman system prune (dangling images, stopped containers, build cache)"
+podman system prune --force --filter 'until=24h' >/dev/null || true
+
+# Enumerate slots that still have a config file; their volumes are protected.
+mapfile -t live_slots < <(
+    find "${cfg_dir}" -maxdepth 1 -name 'slot-*.env' -printf '%f\n' 2>/dev/null \
+        | sed -E 's/slot-([0-9]+)\.env/\1/'
+)
+is_live() { local s; for s in "${live_slots[@]:-}"; do [[ "$s" == "$1" ]] && return 0; done; return 1; }
+
+# Remove tool-cache volumes with no matching slot, or untouched for too long.
+while read -r vol; do
+    [[ "${vol}" =~ ^sp-tool-([0-9]+)$ ]] || continue
+    slot="${BASH_REMATCH[1]}"
+    if ! is_live "${slot}"; then
+        log "removing orphaned cache volume ${vol} (slot ${slot} no longer configured)"
+        podman volume rm "${vol}" >/dev/null 2>&1 || true
+        continue
+    fi
+    mount="$(podman volume inspect "${vol}" --format '{{.Mountpoint}}' 2>/dev/null || true)"
+    [[ -d "${mount}" ]] || continue
+    if [[ -z "$(find "${mount}" -mtime "-${idle_days}" -print -quit 2>/dev/null)" ]]; then
+        log "clearing stale tool cache ${vol} (idle > ${idle_days}d, slot still live)"
+        find "${mount}" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+    fi
+done < <(podman volume ls --format '{{.Name}}')
+
+log "done"

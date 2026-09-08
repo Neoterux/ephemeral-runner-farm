@@ -1,0 +1,20 @@
+# secrets / local state — never commit
+*.pem
+*.key
+*.crt
+secrets/
+*.env
+!*.env.example
+manager/state/
+*.db
+*.db-journal
+*.db-wal
+__pycache__/
+*.pyc
+.venv/
+venv/
+deploy.local.sh
+hosts.local.toml
+
+# staged runner tarball (226MB — not in git)
+containerfile/actions-runner-*.tar.gz

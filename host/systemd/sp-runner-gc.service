@@ -1,0 +1,7 @@
+[Unit]
+Description=SP runner farm garbage collection
+
+[Service]
+Type=oneshot
+Environment=XDG_RUNTIME_DIR=%t
+ExecStart=%h/.local/bin/sp-runner-gc

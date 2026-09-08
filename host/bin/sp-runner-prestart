@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# ExecStartPre for sp-runner@<slot>.service.
+#
+# Two jobs:
+#   1. Honour a drain request. If ~/.config/sp-runner/slot-<n>.drain exists we
+#      are at a clean job boundary (the previous --ephemeral container has
+#      already exited), so disable the unit and exit 69. The unit sets
+#      RestartPreventExitStatus=69, so systemd stops here instead of looping —
+#      a drain therefore always lands between jobs, never mid-build.
+#   2. Otherwise mint a fresh registration token via the local agent and write
+#      the runtime env file that ExecStart's `podman run --env-file` consumes.
+#
+# Runs as the ghrunner user inside its own systemd --user manager, so it can
+# call `systemctl --user` directly.
+set -euo pipefail
+
+slot="${1:?usage: sp-runner-prestart <slot>}"
+cfg_dir="${XDG_CONFIG_HOME:-$HOME/.config}/sp-runner"
+run_dir="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR unset}/sp-runner"
+slot_cfg="${cfg_dir}/slot-${slot}.env"
+drain_marker="${cfg_dir}/slot-${slot}.drain"
+agent_cfg="${cfg_dir}/agent.env"
+out="${run_dir}/slot-${slot}.env"
+
+DRAIN_EXIT=69
+
+if [[ -f "${drain_marker}" ]]; then
+    echo "[prestart] slot ${slot}: drain requested — stopping at job boundary"
+    rm -f "${drain_marker}"
+    systemctl --user disable "sp-runner@${slot}.service" >/dev/null 2>&1 || true
+    # Reflect the new desired state in the persistent config.
+    if [[ -f "${slot_cfg}" ]]; then
+        sed -i 's/^ENABLED=.*/ENABLED=false/' "${slot_cfg}" 2>/dev/null || true
+    fi
+    exit "${DRAIN_EXIT}"
+fi
+
+[[ -f "${slot_cfg}" ]]  || { echo "[prestart] missing ${slot_cfg}" >&2; exit 1; }
+[[ -f "${agent_cfg}" ]] || { echo "[prestart] missing ${agent_cfg}" >&2; exit 1; }
+
+# shellcheck disable=SC1090
+source "${slot_cfg}"
+# shellcheck disable=SC1090
+source "${agent_cfg}"
+
+: "${AGENT_URL:?AGENT_URL missing from agent.env}"
+: "${GITHUB_URL:?GITHUB_URL missing from slot config}"
+: "${RUNNER_LABELS:?RUNNER_LABELS missing from slot config}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+RUNNER_GROUP="${RUNNER_GROUP:-}"
+SLOT_MEMORY="${SLOT_MEMORY:-12g}"
+SLOT_CPUS="${SLOT_CPUS:-2}"
+# HOST_ID must match the manager's [[hosts]] id — the reconcile/orphan-reap
+# logic keys on runner names of the form <host_id>-slot-<n>.
+runner_name="${HOST_ID:-$(hostname -s)}-slot-${slot}"
+
+# Mint a registration token. The agent holds the manager URL + bearer token and
+# proxies to the GitHub App; this endpoint is bound to loopback on the agent.
+# -k: the agent's cert is self-signed and this call never leaves the host.
+token_json="$(curl -fsSk --max-time 30 \
+    -X POST "${AGENT_URL%/}/internal/slot-token/${slot}" \
+    -H 'content-type: application/json' \
+    -d "{\"runner_name\":\"${runner_name}\"}")"
+
+runner_token="$(printf '%s' "${token_json}" | jq -r '.token // empty')"
+[[ -n "${runner_token}" ]] || { echo "[prestart] no token in agent response: ${token_json}" >&2; exit 1; }
+
+install -d -m 0700 "${run_dir}"
+umask 077
+cat > "${out}" <<EOF
+RUNNER_URL=${GITHUB_URL}
+RUNNER_TOKEN=${runner_token}
+RUNNER_NAME=${runner_name}
+RUNNER_LABELS=${RUNNER_LABELS}
+RUNNER_GROUP=${RUNNER_GROUP}
+SLOT_MEMORY=${SLOT_MEMORY}
+SLOT_CPUS=${SLOT_CPUS}
+IMAGE_TAG=${IMAGE_TAG}
+EOF
+
+echo "[prestart] slot ${slot}: token minted for ${runner_name} (image ${IMAGE_TAG})"

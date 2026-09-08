@@ -1,0 +1,14 @@
+# SSH targets for deploy.sh. Copy to hosts.toml (gitignored) and edit.
+# The `id` values must match the [[hosts]] ids deploy.sh writes into manager.toml.
+
+[[host]]
+id = "build-farm"
+ssh = "deploy@10.0.0.10"
+role = "manager"            # "manager" installs manager + agent; "agent" installs agent only
+lan_cidr = "10.0.0.0/16"    # firewall scope for the UI port 8080 (comma-separate for several)
+
+[[host]]
+id = "build-farm-2"
+ssh = "deploy@10.0.1.20"
+role = "agent"
+allow_from = "10.0.0.10"    # only the manager host may reach the agent port 8181

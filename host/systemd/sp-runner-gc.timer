@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily SP runner farm garbage collection
+
+[Timer]
+OnCalendar=*-*-* 04:17:00
+Persistent=true
+RandomizedDelaySec=900
+
+[Install]
+WantedBy=timers.target

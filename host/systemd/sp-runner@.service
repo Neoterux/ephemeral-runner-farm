@@ -1,0 +1,33 @@
+# Ephemeral GitHub Actions runner slot. One instance == one concurrent job slot.
+# Installed as a user unit for the ghrunner account: ~/.config/systemd/user/
+#
+# Every exit path (job done, crash, OOM, reboot) is handled identically:
+# systemd starts a fresh container. The one exception is exit code 69, which
+# sp-runner-prestart returns after honouring a drain request.
+[Unit]
+Description=Ephemeral GitHub Actions runner slot %i
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Environment=XDG_RUNTIME_DIR=%t
+RuntimeDirectory=sp-runner
+RuntimeDirectoryPreserve=yes
+RuntimeDirectoryMode=0700
+
+ExecStartPre=%h/.local/bin/sp-runner-prestart %i
+ExecStart=%h/.local/bin/sp-runner-run %i
+ExecStop=%h/.local/bin/sp-runner-stop %i
+ExecStopPost=-/usr/bin/podman rm -f sp-runner-%i
+
+Restart=always
+RestartSec=10
+# prestart exits 69 only when draining — do not restart in that case.
+RestartPreventExitStatus=69
+# Long enough for the biggest build to finish during a graceful stop.
+TimeoutStopSec=6h
+
+[Install]
+WantedBy=default.target

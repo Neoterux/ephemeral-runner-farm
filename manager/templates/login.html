@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<div class="login-card">
+  <h1>SP runner farm</h1>
+  {% if error %}<div class="banner err">{{ error }}</div>{% endif %}
+  <form method="post" action="/login">
+    <label>Username <input name="username" autocomplete="username" autofocus required></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <button type="submit">Sign in</button>
+  </form>
+</div>
+{% endblock %}

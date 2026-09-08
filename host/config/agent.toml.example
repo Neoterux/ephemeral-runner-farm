@@ -1,0 +1,29 @@
+# Per-host agent config. Installed to ~ghrunner/.config/sp-runner/agent.toml
+# by deploy.sh, which fills in the tokens. Mode 0600.
+
+# Stable identifier for this host. Must match the [[hosts]] id in manager.toml.
+host_id = "build-farm"        # must match a [[hosts]] id in manager.toml
+
+# The org (or repo) runners register against.
+github_url = "https://github.com/your-org"
+
+# Where the manager lives. The agent calls this to mint registration tokens.
+manager_url = "http://127.0.0.1:8080"     # manager host: loopback. other hosts: https://<manager-host>:8080
+
+# Bearer this agent presents to the manager (manager validates against the
+# per-host `manager_token` in its own config).
+manager_token = "REPLACE_WITH_RANDOM_48_BYTES_BASE64"
+
+# Bearer the manager must present to THIS agent for any mutating call.
+listen_token = "REPLACE_WITH_RANDOM_48_BYTES_BASE64"
+
+# TLS for manager_url: false on loopback, or a path to the manager's CA/cert
+# bundle when talking to a remote manager over https.
+verify_tls = false
+
+# Mount points to report on the Disks page. First one is treated as the
+# runner-data filesystem for watermark decisions.
+disk_mounts = ["/home", "/"]
+
+# Clear a live slot's tool cache if nothing in it has been touched for this long.
+toolcache_idle_days = 14
