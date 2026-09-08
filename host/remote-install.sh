@@ -18,7 +18,7 @@ warn() { printf '[install %3ds]  !! %s\n' "$(( $(date +%s) - T0 ))" "$*" >&2; }
 
 inst() { install -o "$RUNNER_USER" -g "$RUNNER_USER" -m "$1" "$2" "$3"; }
 # runuser keeps the caller's CWD; this script runs from root's shell in
-# /home/neoterux (0700), which ghrunner cannot chdir into. Force a safe CWD.
+# /home/deploy (0700), which ghrunner cannot chdir into. Force a safe CWD.
 asuser() { runuser -u "$RUNNER_USER" -- /usr/bin/env -C "$STAGE" XDG_RUNTIME_DIR="$RUNTIME" \
            DBUS_SESSION_BUS_ADDRESS="unix:path=$RUNTIME/bus" "$@"; }
 sctl() { asuser systemctl --user "$@"; }

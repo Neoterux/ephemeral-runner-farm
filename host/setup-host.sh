@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # One-time host bootstrap. Run as root (deploy.sh does this over sudo).
 #
-#   setup-host.sh --role manager [--lan-cidr 10.51.0.0/16]
-#   setup-host.sh --role agent   [--allow-from 10.51.20.245]
+#   setup-host.sh --role manager [--lan-cidr 10.0.0.0/16]
+#   setup-host.sh --role agent   [--allow-from 10.0.0.10]
 #
 # Idempotent: safe to re-run. Creates the unprivileged ghrunner account, gives
 # it lingering + cgroup delegation so rootless resource limits and boot-start
