@@ -10,6 +10,12 @@ key="${cfg_dir}/agent.key"
 
 [[ -f "$cert" && -f "$key" ]] || { echo "[agent] missing $cert / $key — run deploy.sh push" >&2; exit 1; }
 
+# rootless podman needs the user D-Bus to reach its pause process; without it
+# `podman logs` / `inspect` fail with "cannot re-exec process to join the
+# existing user namespace". The systemd unit only guarantees XDG_RUNTIME_DIR.
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
+
 cd "$app_dir"
 exec .venv/bin/python -m uvicorn app:app \
     --host 0.0.0.0 --port 8181 --no-access-log \

@@ -18,7 +18,7 @@ warn() { printf '[install %3ds]  !! %s\n' "$(( $(date +%s) - T0 ))" "$*" >&2; }
 
 inst() { install -o "$RUNNER_USER" -g "$RUNNER_USER" -m "$1" "$2" "$3"; }
 # runuser keeps the caller's CWD; this script runs from root's shell in
-# /home/deploy (0700), which ghrunner cannot chdir into. Force a safe CWD.
+# /home/neoterux (0700), which ghrunner cannot chdir into. Force a safe CWD.
 asuser() { runuser -u "$RUNNER_USER" -- /usr/bin/env -C "$STAGE" XDG_RUNTIME_DIR="$RUNTIME" \
            DBUS_SESSION_BUS_ADDRESS="unix:path=$RUNTIME/bus" "$@"; }
 sctl() { asuser systemctl --user "$@"; }
@@ -147,8 +147,9 @@ fi
 step "enabling services"
 loginctl enable-linger "$RUNNER_USER"
 sctl daemon-reload
-say "  starting sp-runner-agent…"
-sctl enable --now sp-runner-agent.service
+say "  (re)starting sp-runner-agent…"
+sctl enable sp-runner-agent.service
+sctl restart sp-runner-agent.service        # enable --now won't restart a running unit → new code
 sctl enable --now sp-runner-gc.timer
 sleep 2
 if sctl is-active --quiet sp-runner-agent.service; then
@@ -158,8 +159,9 @@ else
 fi
 
 if [ "$HAVE_MANAGER" = 1 ]; then
-    say "  starting sp-runner-manager…"
-    sctl enable --now sp-runner-manager.service
+    say "  (re)starting sp-runner-manager…"
+    sctl enable sp-runner-manager.service
+    sctl restart sp-runner-manager.service
     sleep 3
     if sctl is-active --quiet sp-runner-manager.service; then
         say "  manager: active, listening on :8080"

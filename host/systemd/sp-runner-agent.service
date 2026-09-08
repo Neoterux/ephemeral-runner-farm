@@ -7,17 +7,24 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+# rootless podman needs its own delegated cgroup subtree to place the pause
+# process; without this its introspection calls (logs/inspect/system df) fail
+# with "cannot re-exec process to join the existing user namespace".
+Delegate=yes
 Environment=XDG_RUNTIME_DIR=%t
 Environment=FARM_AGENT_CONFIG=%h/.config/sp-runner/agent.toml
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
 WorkingDirectory=%h/sp-runner-agent
 ExecStart=%h/.local/bin/sp-runner-agent-run
 Restart=always
 RestartSec=5
 
-# Drives systemctl --user + podman as this user; no elevated access. Sandboxing
-# is kept light because podman needs broad access to the user's own home.
-NoNewPrivileges=yes
-ProtectSystem=yes
+# No sandboxing directives: the agent's whole job is to drive rootless podman
+# and `systemctl --user`. NoNewPrivileges blocks newuidmap/newgidmap, and a
+# private mount namespace (ProtectSystem / ProtectHome / PrivateTmp) breaks
+# `podman logs`/`inspect` joining a running container's user namespace
+# ("cannot re-exec process to join the existing user namespace"). It runs
+# unprivileged as ghrunner regardless.
 
 [Install]
 WantedBy=default.target

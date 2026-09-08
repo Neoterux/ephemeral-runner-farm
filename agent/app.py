@@ -248,9 +248,26 @@ async def disk() -> dict[str, Any]:
             "mount": mp, "total_bytes": total, "used_bytes": used, "free_bytes": free,
             "used_pct": round(used / total * 100, 1) if total else 0.0,
         })
+    # `podman system df -v` can't combine with --format json, so gather the
+    # summary and the per-volume detail separately.
+    df: dict[str, Any] | None = None
     try:
-        df = await podman_json("system", "df", "-v", timeout=45)
-    except HTTPException:
+        summary = await podman_json("system", "df", timeout=45)  # list of {Type,Total,Size,Reclaimable}
+        vols = await podman_json("volume", "ls", timeout=20)     # list of {Name,Driver,Mountpoint,...}
+        vsizes = {}
+        for v in vols or []:
+            rc, out, _ = await run("podman", "volume", "inspect", v["Name"],
+                                   "--format", "{{.Mountpoint}}", timeout=10)
+            mp2 = out.strip()
+            if rc == 0 and mp2 and Path(mp2).is_dir():
+                vsizes[v["Name"]] = sum(f.stat().st_size for f in Path(mp2).rglob("*") if f.is_file())
+        df = {
+            "summary": summary,
+            "volumes": [{"VolumeName": v["Name"], "Size": vsizes.get(v["Name"], 0),
+                         "Links": 1 if v.get("Name", "").startswith(("sp-tool-", "sp-pnpm")) else 0}
+                        for v in (vols or [])],
+        }
+    except (HTTPException, KeyError, OSError):
         df = None
     return {"host_id": CFG["host_id"], "mounts": mounts, "podman_df": df, "time": time.time()}
 

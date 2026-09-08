@@ -11,8 +11,10 @@ Wants=network-online.target
 StartLimitIntervalSec=0
 
 [Service]
+Delegate=yes
 Type=simple
 Environment=XDG_RUNTIME_DIR=%t
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
 RuntimeDirectory=sp-runner
 RuntimeDirectoryPreserve=yes
 RuntimeDirectoryMode=0700

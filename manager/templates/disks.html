@@ -32,12 +32,16 @@
   <details class="podman-df">
     <summary>podman storage</summary>
     <table class="kv">
-      <tr><th>Images</th><td>{{ d.podman_df.get('Images', []) | length }} image(s)</td></tr>
+      {% for row in d.podman_df.get('summary', []) %}
+      <tr><th>{{ row.Type }}</th><td>{{ row.Total }} total{% if row.Active is defined %}, {{ row.Active }} active{% endif %} · {{ row.Size }}{% if row.Reclaimable %} · {{ row.Reclaimable }} reclaimable{% endif %}</td></tr>
+      {% endfor %}
+      {% if d.podman_df.get('volumes') %}
       <tr><th>Volumes</th><td>
-        {% for v in d.podman_df.get('Volumes', []) %}
-          <div><code>{{ v.VolumeName }}</code> — {{ (v.Size / 1073741824) | round(2) if v.Size is number else v.Size }} GiB{% if v.Links and v.Links > 0 %} <span class="dim">(in use)</span>{% endif %}</div>
+        {% for v in d.podman_df.volumes %}
+          <div><code>{{ v.VolumeName }}</code> — {{ (v.Size / 1073741824) | round(2) }} GiB{% if v.Links %} <span class="dim">(in use)</span>{% endif %}</div>
         {% endfor %}
       </td></tr>
+      {% endif %}
     </table>
   </details>
   {% endif %}

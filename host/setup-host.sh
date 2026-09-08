@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # One-time host bootstrap. Run as root (deploy.sh does this over sudo).
 #
-#   setup-host.sh --role manager [--lan-cidr 10.0.0.0/16]
-#   setup-host.sh --role agent   [--allow-from 10.0.0.10]
+#   setup-host.sh --role manager [--lan-cidr 10.51.0.0/16]
+#   setup-host.sh --role agent   [--allow-from 10.51.20.245]
 #
 # Idempotent: safe to re-run. Creates the unprivileged ghrunner account, gives
 # it lingering + cgroup delegation so rootless resource limits and boot-start
@@ -62,9 +62,16 @@ fi
 runner_home="$(getent passwd "$RUNNER_USER" | cut -d: -f6)"
 runner_uid="$(id -u "$RUNNER_USER")"
 
+# So the agent's `journalctl --user -u sp-runner@N` (the log viewer's journal
+# pane) can actually read the journal.
+if getent group systemd-journal >/dev/null && ! id -nG "$RUNNER_USER" | tr ' ' '\n' | grep -qx systemd-journal; then
+    log "adding $RUNNER_USER to systemd-journal"
+    usermod -aG systemd-journal "$RUNNER_USER"
+fi
+
 # subuid/subgid for rootless containers. shadow-utils auto-assigns a free range
 # at useradd time on Rocky 9; only fall back to an explicit high range (well
-# clear of the existing runner-account allocations) if it did not.
+# clear of the existing farm-user-*/sperp-* allocations) if it did not.
 if ! grep -q "^${RUNNER_USER}:" /etc/subuid; then
     log "allocating subuid/subgid range explicitly"
     last_end=$(awk -F: '{ if ($2+$3 > max) max=$2+$3 } END { print (max ? max : 900000) }' /etc/subuid)

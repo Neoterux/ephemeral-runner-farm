@@ -101,11 +101,18 @@ def load() -> None:
              "free_bytes": int(root_total * (1 - pct_root / 100) * 2**30), "used_pct": pct_root},
         ]
 
-    df = {"Images": [{}, {}, {}], "Volumes": [
-        {"VolumeName": "sp-tool-1", "Size": 3.1 * 2**30, "Links": 1},
-        {"VolumeName": "sp-tool-2", "Size": 2.7 * 2**30, "Links": 1},
-        {"VolumeName": "sp-pnpm", "Size": 4.4 * 2**30, "Links": 3},
-    ]}
+    df = {
+        "summary": [
+            {"Type": "Images", "Total": 12, "Active": 4, "Size": "18.4GB", "Reclaimable": "12.1GB"},
+            {"Type": "Containers", "Total": 7, "Active": 3, "Size": "1.2MB", "Reclaimable": "0B"},
+            {"Type": "Local Volumes", "Total": 5, "Active": 5, "Size": "10.3GB", "Reclaimable": "0B"},
+        ],
+        "volumes": [
+            {"VolumeName": "sp-tool-1", "Size": int(3.1 * 2**30), "Links": 1},
+            {"VolumeName": "sp-tool-2", "Size": int(2.7 * 2**30), "Links": 1},
+            {"VolumeName": "sp-pnpm", "Size": int(4.4 * 2**30), "Links": 3},
+        ],
+    }
     disk.DISK[h0] = {"mount": "/home", "used_pct": 41.0, "total": 207 * 2**30,
                      "used": int(0.41 * 207 * 2**30), "level": "ok", "since": now - 9000,
                      "all_mounts": mounts(41.0, 8.0), "podman_df": df}
