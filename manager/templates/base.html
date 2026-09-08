@@ -21,10 +21,10 @@
       <span class="brand-copy"><strong>runner farm</strong><small>operations console</small></span>
     </a>
     <nav aria-label="Main navigation">
-      <a href="/fleet"    class="{{ 'active' if request.url.path.startswith('/fleet') or request.url.path.startswith('/logs') }}" {{ 'aria-current="page"' if request.url.path.startswith('/fleet') or request.url.path.startswith('/logs') }}>{{ icon('server') }}<span>Fleet</span></a>
-      <a href="/disks"    class="{{ 'active' if request.url.path.startswith('/disks') }}" {{ 'aria-current="page"' if request.url.path.startswith('/disks') }}>{{ icon('hdd') }}<span>Storage</span></a>
-      <a href="/health"   class="{{ 'active' if request.url.path == '/health' }}" {{ 'aria-current="page"' if request.url.path == '/health' }}>{{ icon('activity') }}<span>Health</span></a>
-      <a href="/settings" class="{{ 'active' if request.url.path == '/settings' }}" {{ 'aria-current="page"' if request.url.path == '/settings' }}>{{ icon('cpu') }}<span>Settings</span></a>
+      <a href="/fleet"    class="{{ 'active' if request.url.path.startswith('/fleet') or request.url.path.startswith('/logs') }}" {% if request.url.path.startswith('/fleet') or request.url.path.startswith('/logs') %}aria-current="page"{% endif %}>{{ icon('server') }}<span>Fleet</span></a>
+      <a href="/disks"    class="{{ 'active' if request.url.path.startswith('/disks') }}" {% if request.url.path.startswith('/disks') %}aria-current="page"{% endif %}>{{ icon('hdd') }}<span>Storage</span></a>
+      <a href="/health"   class="{{ 'active' if request.url.path == '/health' }}" {% if request.url.path == '/health' %}aria-current="page"{% endif %}>{{ icon('activity') }}<span>Health</span></a>
+      <a href="/settings" class="{{ 'active' if request.url.path == '/settings' }}" {% if request.url.path == '/settings' %}aria-current="page"{% endif %}>{{ icon('cpu') }}<span>Settings</span></a>
     </nav>
     <form method="post" action="/logout" class="logout">
       <span class="avatar" aria-hidden="true">{{ user.username[0] | upper }}</span>
