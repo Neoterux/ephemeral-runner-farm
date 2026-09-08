@@ -166,7 +166,7 @@ if [ "$HAVE_MANAGER" = 1 ]; then
         step "SEED ADMIN (first run only)"
         cat "$HOME_DIR/.local/state/sp-runner-manager/seed-admin.txt" 2>/dev/null | sed 's/^/      /' \
             || echo "      (already initialised — reset: cd ~ghrunner/sp-runner-manager && \\
-      SP_MANAGER_CONFIG=~ghrunner/.config/sp-runner/manager.toml .venv/bin/python manage.py reset-password admin)"
+      FARM_MANAGER_CONFIG=~ghrunner/.config/sp-runner/manager.toml .venv/bin/python manage.py reset-password admin)"
     else
         warn "manager NOT active:"; asuser systemctl --user status --no-pager sp-runner-manager.service | tail -20 | sed 's/^/      /' || true
     fi

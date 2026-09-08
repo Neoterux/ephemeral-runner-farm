@@ -11,7 +11,7 @@
 set -euo pipefail
 
 cfg_dir="${XDG_CONFIG_HOME:-$HOME/.config}/sp-runner"
-idle_days="${SP_TOOLCACHE_IDLE_DAYS:-14}"
+idle_days="${FARM_TOOLCACHE_IDLE_DAYS:-14}"
 
 log() { printf '[gc %(%FT%T%z)T] %s\n' -1 "$*"; }
 

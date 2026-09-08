@@ -21,6 +21,50 @@ manager: no root daemon, no sudoers rules. Root is used only by
 Multiple hosts feed the same runner group, so GitHub schedules across them and
 no single host is a build-blocking point of failure.
 
+## Screenshots
+
+**Fleet** — every slot on every host, live job, restart count, GitHub registration:
+
+![Fleet page](docs/screenshots/fleet.png)
+
+**Disks** — per-mount gauges with watermark colouring and a 30-day sparkline:
+
+![Disks page](docs/screenshots/disks.png)
+
+Try the UI with no hosts and synthetic data:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r manager/requirements.txt
+cat > /tmp/m.toml <<'EOF'
+[server]
+secret_key = "change-me-000000000000000000000000000000000000000000"
+[github]
+org = "demo"
+app_id = 0
+installation_id = 0
+private_key_file = "/tmp/none.pem"
+[[hosts]]
+id = "build-farm"
+address = "127.0.0.1"
+agent_url = "https://127.0.0.1:8181"
+agent_token = "a"
+manager_token = "b"
+agent_tls_fingerprint = "x"
+enabled = true
+[[hosts]]
+id = "build-farm-2"
+address = "10.0.1.20"
+agent_url = "https://10.0.1.20:8181"
+agent_token = "c"
+manager_token = "d"
+agent_tls_fingerprint = "y"
+enabled = true
+EOF
+FARM_DEMO=1 FARM_MANAGER_CONFIG=/tmp/m.toml STATE_DIRECTORY=/tmp/farm-demo \
+  .venv/bin/python -m uvicorn --app-dir manager app:app --port 8080
+# open http://localhost:8080  (demo mode skips auth)
+```
+
 ## How it fits together
 
 | Path | What | Where it runs |

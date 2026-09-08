@@ -4,35 +4,38 @@
 <h1>Health</h1>
 
 <section class="panel">
-  <h2>Hosts</h2>
+  <h2 style="padding:.85rem 1.1rem">Hosts</h2>
+  <div style="padding:0 1.1rem 1.1rem">
   <table class="kv">
     {% for h in snap.hosts %}
     <tr>
       <th>{{ h.id }}</th>
       <td>
-        {% if h.reachable %}<span class="pill s-idle">up</span> last seen just now
+        {% if h.reachable %}<span class="pill s-idle">up</span>
         {% elif h.degraded %}<span class="pill s-offline">degraded</span>
-          since {{ ((now - h.unreachable_since) / 60) | round }} min ago
-          {{ '· runners reaped' if h.reaped }}
+          <span class="dim">{{ ((now - h.unreachable_since) / 60) | round | int }} min{{ ' · runners reaped' if h.reaped }}</span>
         {% else %}<span class="pill s-stopped">disabled</span>{% endif %}
-        {% if h.error %}<div class="err-text">{{ h.error }}</div>{% endif %}
+        {% if h.error %}<div class="err-text" style="margin-top:.3rem;font-size:.76rem">{{ h.error }}</div>{% endif %}
       </td>
     </tr>
     {% endfor %}
   </table>
+  </div>
 </section>
 
 <section class="panel">
-  <h2>Orphaned runner registrations</h2>
-  <p class="dim">GitHub runners named <code>&lt;host&gt;-slot-&lt;n&gt;</code> that are offline and have no live container behind them.</p>
+  <h2 style="padding:.85rem 1.1rem">Orphaned runner registrations</h2>
+  <div style="padding:0 1.1rem 1.1rem">
+  <p class="dim" style="font-size:.8rem">GitHub runners named <code>&lt;host&gt;-slot-&lt;n&gt;</code> that are offline with no live container behind them.</p>
   {% if snap.meta.orphans %}
   <table class="slots">
     <thead><tr><th>Name</th><th>Host</th><th>Slot</th><th>Runner ID</th><th></th></tr></thead>
     <tbody>
     {% for o in snap.meta.orphans %}
     <tr>
-      <td><code>{{ o.name }}</code></td><td>{{ o.host }}</td><td>#{{ o.slot }}</td><td>{{ o.id }}</td>
-      <td>
+      <td><code>{{ o.name }}</code></td><td>{{ o.host }}</td><td>#{{ o.slot }}</td>
+      <td class="mono">{{ o.id }}</td>
+      <td class="actions">
         <form method="post" action="/health/reap">
           <input type="hidden" name="runner_id" value="{{ o.id }}">
           <input type="hidden" name="name" value="{{ o.name }}">
@@ -43,27 +46,28 @@
     {% endfor %}
     </tbody>
   </table>
-  {% else %}
-  <p class="dim">None.</p>
-  {% endif %}
+  {% else %}<p class="dim">None.</p>{% endif %}
+  </div>
 </section>
 
 <section class="panel">
-  <h2>Recent activity</h2>
+  <h2 style="padding:.85rem 1.1rem">Recent activity</h2>
+  <div style="padding:0 1.1rem 1.1rem">
   <table class="audit">
     <thead><tr><th>When</th><th>User</th><th>Action</th><th>Target</th><th>Detail</th><th></th></tr></thead>
     <tbody>
     {% for a in audit %}
-    <tr class="{{ 'row-err' if a['result'] == 'error' or a['result'] == 'fail' }}">
+    <tr class="{{ 'row-err' if a['result'] in ('error', 'fail') }}">
       <td>{{ a['ts'] | int | datetimeformat }}</td>
-      <td>{{ a['username'] }}</td>
-      <td>{{ a['action'] }}</td>
-      <td>{{ a['target'] or '' }}</td>
+      <td class="who-cell">{{ a['username'] }}</td>
+      <td class="action-cell">{{ a['action'] }}</td>
+      <td class="mono" style="font-size:.76rem">{{ a['target'] or '' }}</td>
       <td class="detail">{{ a['detail'] or '' }}</td>
-      <td>{{ a['result'] }}</td>
+      <td class="mono" style="font-size:.74rem">{{ a['result'] }}</td>
     </tr>
     {% endfor %}
     </tbody>
   </table>
+  </div>
 </section>
 {% endblock %}

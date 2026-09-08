@@ -1,4 +1,4 @@
-# Web manager. Runs only on the manager host. User unit for the ghrunner account.
+# Web manager. Runs only on build-farm. User unit for the ghrunner account.
 [Unit]
 Description=SP runner farm manager (web UI)
 After=network-online.target
@@ -7,7 +7,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 Environment=XDG_RUNTIME_DIR=%t
-Environment=SP_MANAGER_CONFIG=%h/.config/sp-runner/manager.toml
+Environment=FARM_MANAGER_CONFIG=%h/.config/sp-runner/manager.toml
 WorkingDirectory=%h/sp-runner-manager
 ExecStart=%h/sp-runner-manager/.venv/bin/python -m uvicorn app:app \
     --host 0.0.0.0 --port 8080 --no-access-log --forwarded-allow-ips=*

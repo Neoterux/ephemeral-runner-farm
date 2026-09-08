@@ -1,37 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Fleet{% endblock %}
 {% block content %}
+<h1>Fleet</h1>
 
 {% for hid, d in disk.hosts.items() %}
   {% if d.level == 'warn' %}
-  <div class="banner warn">{{ hid }}: {{ d.mount }} at {{ d.used_pct }}% — approaching the prune threshold.</div>
+  <div class="banner warn">{{ hid }} — <code>{{ d.mount }}</code> at {{ d.used_pct }}%, approaching the prune threshold.</div>
   {% elif d.level == 'prune' %}
-  <div class="banner warn">{{ hid }}: {{ d.mount }} at {{ d.used_pct }}% — auto-prune active.</div>
+  <div class="banner warn">{{ hid }} — <code>{{ d.mount }}</code> at {{ d.used_pct }}%, auto-prune active.</div>
   {% elif d.level == 'freeze' %}
-  <div class="banner err">{{ hid }}: {{ d.mount }} at {{ d.used_pct }}% — new slots frozen until space is freed.</div>
+  <div class="banner err">{{ hid }} — <code>{{ d.mount }}</code> at {{ d.used_pct }}%, new slots frozen until space is freed.</div>
   {% endif %}
 {% endfor %}
 
 <section class="panel">
   <details>
     <summary><h2>Create runners</h2></summary>
+    <div style="padding:0 1.1rem 1rem">
     {% for h in snap.hosts %}
     <form method="post" action="/slots/{{ h.id }}/create" class="create-form">
-      <h3>{{ h.id }} <small>{{ h.address }}</small></h3>
-      <label>Count <input type="number" name="count" value="1" min="1" max="16"></label>
-      <label>Labels <input name="labels" value="self-hosted,linux,x64,podman" size="34"></label>
-      <label>Group <input name="group" value="builder" list="rg-list"></label>
-      <label>Image tag <input name="image_tag" value="latest"></label>
+      <h3>{{ h.id }} <small class="mono">{{ h.address }}</small></h3>
+      <label>Count <input type="number" name="count" value="1" min="1" max="16" style="width:60px"></label>
+      <label>Labels <input name="labels" value="self-hosted,linux,x64,podman" size="30"></label>
+      <label>Group <input name="group" value="" list="rg-list" placeholder="(none)"></label>
+      <label>Image tag <input name="image_tag" value="latest" size="12"></label>
       <label>Memory <input name="memory" value="12g" size="5"></label>
       <label>CPUs <input name="cpus" value="2" size="3"></label>
-      <button type="submit" {{ 'disabled' if not h.reachable }}>Create on {{ h.id }}</button>
+      <button type="submit" class="primary" {{ 'disabled' if not h.reachable }}>Create on {{ h.id }}</button>
     </form>
     {% endfor %}
+    </div>
   </details>
 </section>
 
-<div id="fleet-rows"
-     hx-get="/fleet/rows" hx-trigger="load, every 5s" hx-swap="innerHTML">
+<div id="fleet-rows" hx-get="/fleet/rows" hx-trigger="load, every 5s" hx-swap="innerHTML">
   {% include "_fleet_rows.html" %}
 </div>
 {% endblock %}

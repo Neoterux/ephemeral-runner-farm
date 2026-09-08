@@ -1,7 +1,7 @@
 """Small admin CLI for the manager. Run as the ghrunner user on the manager host:
 
     cd ~/sp-runner-manager
-    SP_MANAGER_CONFIG=~/.config/sp-runner/manager.toml .venv/bin/python manage.py <cmd>
+    FARM_MANAGER_CONFIG=~/.config/sp-runner/manager.toml .venv/bin/python manage.py <cmd>
 
 Commands:
     reset-password <user> [newpass]   set a password (random + printed if omitted)

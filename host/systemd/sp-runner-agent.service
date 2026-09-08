@@ -8,7 +8,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 Environment=XDG_RUNTIME_DIR=%t
-Environment=SP_AGENT_CONFIG=%h/.config/sp-runner/agent.toml
+Environment=FARM_AGENT_CONFIG=%h/.config/sp-runner/agent.toml
 WorkingDirectory=%h/sp-runner-agent
 ExecStart=%h/.local/bin/sp-runner-agent-run
 Restart=always

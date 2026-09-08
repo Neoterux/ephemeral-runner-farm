@@ -39,7 +39,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 VERSION = "1.0.0"
-CONFIG_PATH = Path(os.environ.get("SP_AGENT_CONFIG", str(Path.home() / ".config/sp-runner/agent.toml")))
+CONFIG_PATH = Path(os.environ.get("FARM_AGENT_CONFIG", str(Path.home() / ".config/sp-runner/agent.toml")))
 CFG_DIR = Path.home() / ".config/sp-runner"
 USER_UNIT_DIR = Path.home() / ".config/systemd/user"
 

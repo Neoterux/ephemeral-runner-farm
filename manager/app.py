@@ -7,6 +7,7 @@ Talks to each host only through its agent HTTP API — never SSH, never root.
 """
 from __future__ import annotations
 
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -76,6 +77,8 @@ def _require_host(host_id: str):
 
 
 async def _user(request: Request) -> auth.CurrentUser:
+    if os.environ.get("FARM_DEMO"):
+        return auth.CurrentUser(username="demo", must_change=False)
     try:
         return await auth.current_user(request)
     except HTTPException as exc:

@@ -3,18 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Runner farm{% endblock %} · SP runner farm</title>
+  <meta name="color-scheme" content="dark">
+  <title>{% block title %}Fleet{% endblock %} · runner farm</title>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
 {% if user is defined and user %}
 <header class="topbar">
-  <span class="brand">SP&nbsp;runner&nbsp;farm</span>
-  <nav>
-    <a href="/fleet" class="{{ 'active' if request.url.path.startswith('/fleet') }}">Fleet</a>
-    <a href="/disks" class="{{ 'active' if request.url.path.startswith('/disks') }}">Disks</a>
-    <a href="/health" class="{{ 'active' if request.url.path == '/health' }}">Health</a>
+  <span class="brand">runner-farm</span>
+  <nav aria-label="Main">
+    <a href="/fleet"    class="{{ 'active' if request.url.path.startswith('/fleet') }}">Fleet</a>
+    <a href="/disks"    class="{{ 'active' if request.url.path.startswith('/disks') }}">Disks</a>
+    <a href="/health"   class="{{ 'active' if request.url.path == '/health' }}">Health</a>
     <a href="/settings" class="{{ 'active' if request.url.path == '/settings' }}">Settings</a>
   </nav>
   <form method="post" action="/logout" class="logout">

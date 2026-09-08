@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import contextlib
 import time
 
@@ -35,6 +36,10 @@ class Background:
         self._tasks: list[asyncio.Task] = []
 
     async def start(self) -> None:
+        if os.environ.get("FARM_DEMO"):
+            import demo
+            demo.load()
+            return  # no reconcile/GitHub/agent traffic in demo mode
         # Prime once so the first page load has data.
         with contextlib.suppress(Exception):
             await fleet.reconcile()

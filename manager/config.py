@@ -1,5 +1,5 @@
 """Manager configuration — parsed once from the TOML pointed at by
-$SP_MANAGER_CONFIG (default ~/.config/sp-runner/manager.toml)."""
+$FARM_MANAGER_CONFIG (default ~/.config/sp-runner/manager.toml)."""
 from __future__ import annotations
 
 import os
@@ -11,7 +11,7 @@ except ModuleNotFoundError:  # Python < 3.11 (dev only; hosts run 3.11)
 from dataclasses import dataclass, field
 from pathlib import Path
 
-CONFIG_PATH = Path(os.environ.get("SP_MANAGER_CONFIG", str(Path.home() / ".config/sp-runner/manager.toml")))
+CONFIG_PATH = Path(os.environ.get("FARM_MANAGER_CONFIG", str(Path.home() / ".config/sp-runner/manager.toml")))
 STATE_DIR = Path(os.environ.get("STATE_DIRECTORY", str(Path.home() / ".local/state/sp-runner-manager")).split(":")[0])
 
 
