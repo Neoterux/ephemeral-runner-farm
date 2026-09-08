@@ -105,6 +105,25 @@ reap_grace_minutes = 15
 reconcile_seconds = 30
 disk_sample_seconds = 60
 disk_history_days = 30
+
+[api]
+# X-API-Key values for /api/v1/* and /metrics. One is generated here.
+keys = ["{tok()}"]
+metrics_public = false
+
+[events]
+track_jobs = false          # emit job.started / job.finished (chatty)
+
+[plugins]
+enabled = []                # e.g. ["webhook", "prometheus"] — see docs/PLUGINS.md
+
+# [plugins.prometheus]      # exposes /metrics for Grafana
+#
+# [plugins.webhook]         # POST events to a phone notifier
+# [[plugins.webhook.targets]]
+# url    = "https://ntfy.sh/YOUR-TOPIC"
+# events = ["host.degraded", "host.recovered", "disk.freeze", "slot.crashloop"]
+# format = "ntfy"
 '''
 
 for h in hosts:
@@ -197,7 +216,7 @@ cmd_push() {
               "https://github.com/actions/runner/releases/download/v${rv}/actions-runner-linux-x64-${rv}.tar.gz"; then
             rm -f "${tb}.part"
             die "could not download the runner tarball from this machine. Stage it manually:
-       scp deploy@10.0.0.10:/tmp/actions-runner-linux-x64-${rv}.tar.gz $tb
+       scp <a-host-with-github-access>:/tmp/actions-runner-linux-x64-${rv}.tar.gz $tb
      (or from any host/machine that can reach release-assets.githubusercontent.com)"
         fi
         mv "${tb}.part" "$tb"

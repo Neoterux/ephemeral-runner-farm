@@ -124,6 +124,15 @@ def load() -> None:
                 rows.append((ts, hid, "/home", total, int(total * pct / 100)))
         c.executemany("INSERT INTO disk_samples(ts, host_id, mount, total_bytes, used_bytes) VALUES (?,?,?,?,?)", rows)
 
+    for kind, msg, hh, ss, ago in [
+        ("disk.warn", f"{h1} /home at 78.0% (ok -> warn)", h1, None, 1750),
+        ("slot.crashloop", f"{h0}/slot-4 has 20 restarts", h0, 4, 2400),
+        ("host.recovered", f"{h1} agent is back", h1, None, 8000),
+        ("slot.offline", f"{h0}/slot-9 went offline", h0, 9, 3600),
+        ("host.degraded", f"{h1} agent unreachable: timeout", h1, None, 8200),
+    ]:
+        db.add_event(now - ago, kind, msg, hh, ss, {})
+
     for act, tgt, det, res, ago in [
         ("slot-create", h0, "slots [1, 2, 3, 4], labels=self-hosted,linux,x64,podman", "ok", 5400),
         ("mint-token", f"{h0}/{h0}-slot-1", None, "ok", 240),

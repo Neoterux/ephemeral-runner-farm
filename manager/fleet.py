@@ -18,6 +18,7 @@ from typing import Any
 import agentclient
 import db
 from config import CFG
+from events import HUB
 from github import APP
 
 # host_id -> live status
@@ -52,6 +53,7 @@ async def reconcile() -> None:
     # 2. Each host's agent.
     for host in CFG.hosts:
         entry = _host_entry(host.id)
+        was_reachable = entry["reachable"]
         if not host.enabled:
             entry.update(reachable=False, error="disabled in config", state=None)
             continue
@@ -59,26 +61,56 @@ async def reconcile() -> None:
             state = await agentclient.get_state(host)
             entry.update(reachable=True, last_seen=now, unreachable_since=None,
                          reaped=False, error=None, state=state)
+            if not was_reachable and entry.get("_ever_seen"):
+                await HUB.emit("host.recovered", f"{host.id} agent is back", host=host.id)
+            entry["_ever_seen"] = True
         except agentclient.AgentError as exc:
             if entry["unreachable_since"] is None:
                 entry["unreachable_since"] = now
             entry.update(reachable=False, error=str(exc))
+            if was_reachable:
+                await HUB.emit("host.degraded", f"{host.id} agent unreachable: {exc}", host=host.id)
 
-    # 3. Attach GitHub status to each slot; detect orphans.
+    # 3. Attach GitHub status to each slot; detect orphans; emit slot transitions.
     grace = CFG.reap_grace_minutes * 60
     for host in CFG.hosts:
         entry = _host_entry(host.id)
         state = entry.get("state")
+        prev = entry.setdefault("_slot_states", {})
         if state:
             for slot in state.get("slots", []):
-                gh = gh_by_name.get(f"{host.id}-slot-{slot['slot']}")
+                n = slot["slot"]
+                gh = gh_by_name.get(f"{host.id}-slot-{n}")
                 slot["github"] = _slim_gh(gh) if gh else None
+                st, was = slot["state"], prev.get(n)
+                if was and was != st:
+                    if st == "offline":
+                        await HUB.emit("slot.offline", f"{host.id}/slot-{n} went offline",
+                                       host=host.id, slot=n, restarts=slot["restarts"])
+                    elif was == "offline" and st in ("idle", "running"):
+                        await HUB.emit("slot.online", f"{host.id}/slot-{n} back online", host=host.id, slot=n)
+                if slot["restarts"] >= 20 and prev.get(f"cl{n}") != (slot["restarts"] // 20):
+                    prev[f"cl{n}"] = slot["restarts"] // 20
+                    await HUB.emit("slot.crashloop",
+                                   f"{host.id}/slot-{n} has {slot['restarts']} restarts",
+                                   host=host.id, slot=n, restarts=slot["restarts"])
+                if CFG.track_jobs and slot.get("job") != prev.get(f"job{n}"):
+                    if slot.get("job"):
+                        await HUB.emit("job.started", f"{host.id}/slot-{n}: {slot['job']}",
+                                       host=host.id, slot=n, job=slot["job"])
+                    elif prev.get(f"job{n}"):
+                        await HUB.emit("job.finished", f"{host.id}/slot-{n} finished {prev.get(f'job{n}')}",
+                                       host=host.id, slot=n)
+                    prev[f"job{n}"] = slot.get("job")
+                prev[n] = st
 
         # Degraded -> reap.
         us = entry["unreachable_since"]
         if us and not entry["reaped"] and (now - us) > grace and not gh_error:
-            await _reap_host_runners(host.id, gh_runners, reason="host unreachable > grace")
+            n = await _reap_host_runners(host.id, gh_runners, reason="host unreachable > grace")
             entry["reaped"] = True
+            await HUB.emit("host.reaped", f"{host.id} unreachable > {CFG.reap_grace_minutes}m — reaped {n} runner(s)",
+                           host=host.id, count=n)
 
     FLEET["_meta"] = {
         "reconciled_at": now,

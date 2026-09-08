@@ -52,6 +52,32 @@
 </section>
 
 <section class="panel">
+  <h2 style="padding:.85rem 1.1rem">{{ icon('activity') }} Events
+    <small style="font-weight:400">
+      {% if api_on %}· API on{% else %}· API off{% endif %}
+      {% if plugins %}· plugins: {{ plugins | join(', ') }}{% endif %}
+    </small>
+  </h2>
+  <div style="padding:0 1.1rem 1.1rem">
+  {% if events %}
+  <table class="audit">
+    <thead><tr><th>When</th><th>Kind</th><th>Where</th><th>Message</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+    <tr class="{{ 'row-err' if e['kind'].split('.')[0] in ('host','slot') and e['kind'].endswith(('degraded','offline','crashloop','reaped','freeze')) }}">
+      <td>{{ e['ts'] | int | datetimeformat }}</td>
+      <td class="action-cell">{{ e['kind'] }}</td>
+      <td class="mono" style="font-size:.76rem">{{ e['host_id'] or '' }}{{ '/slot-' ~ e['slot'] if e['slot'] is not none }}</td>
+      <td class="detail">{{ e['message'] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="dim">No events yet. Transitions (host up/down, disk watermarks, slot offline) land here and fire any configured webhooks.</p>{% endif %}
+  </div>
+</section>
+
+<section class="panel">
   <h2 style="padding:.85rem 1.1rem">Recent activity</h2>
   <div style="padding:0 1.1rem 1.1rem">
   <table class="audit">

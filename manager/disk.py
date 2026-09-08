@@ -15,6 +15,7 @@ from typing import Any
 import agentclient
 import db
 from config import CFG
+from events import HUB
 
 # host_id -> {"mount", "used_pct", "level", "since", "total", "used"}
 DISK: dict[str, dict[str, Any]] = {}
@@ -67,9 +68,12 @@ async def sample_and_enforce() -> None:
             "podman_df": data.get("podman_df"),
         }
 
-        if new_level != prev_level:
+        if prev_level and new_level != prev_level:
             db.audit("system", "disk-watermark", target=host.id,
                      detail=f"{primary['mount']} at {used_pct}% -> {new_level}")
+            await HUB.emit(f"disk.{new_level}",
+                           f"{host.id} {primary['mount']} at {used_pct}% ({prev_level} -> {new_level})",
+                           host=host.id, mount=primary["mount"], used_pct=used_pct)
 
         if new_level in ("prune", "freeze") and prev_level not in ("prune", "freeze"):
             try:

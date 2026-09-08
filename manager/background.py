@@ -26,8 +26,9 @@ async def _every(seconds: int, coro_fn, name: str) -> None:
 async def _prune_samples_daily() -> None:
     while True:
         removed = db.prune_disk_samples(CFG.disk_history_days)
+        removed += db.prune_events(max(CFG.disk_history_days, 14))
         if removed:
-            db.audit("system", "prune-disk-samples", detail=f"removed {removed} rows")
+            db.audit("system", "prune-old-rows", detail=f"removed {removed} rows")
         await asyncio.sleep(86400)
 
 

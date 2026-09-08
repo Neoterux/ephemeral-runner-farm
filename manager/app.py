@@ -22,6 +22,8 @@ import auth
 import db
 import disk
 import fleet
+import plugins
+from api import router as api_router
 from background import BG
 from config import CFG
 from github import APP
@@ -38,6 +40,15 @@ templates.env.filters["datetimeformat"] = _datetimeformat
 
 app = FastAPI(title="sp-runner-manager")
 app.mount("/static", StaticFiles(directory=str(BASE / "static")), name="static")
+app.include_router(api_router)
+
+# Plugins register routes/metrics/event handlers before the server binds.
+db.init()
+_LOADED_PLUGINS: list[str] = []
+try:
+    _LOADED_PLUGINS = plugins.load(app)
+except Exception as _exc:  # noqa: BLE001 — a bad plugin must not stop the manager
+    print(f"WARNING: plugin load failed: {_exc}", flush=True)
 
 
 # --------------------------------------------------------------------------- lifecycle
@@ -175,7 +186,8 @@ async def disks_series(host: str, mount: str, user: auth.CurrentUser = Depends(_
 @app.get("/health", response_class=HTMLResponse)
 async def health_page(request: Request, user: auth.CurrentUser = Depends(_user)) -> HTMLResponse:
     return _tmpl(request, "health.html", user=user, snap=fleet.snapshot(),
-                 audit=db.recent_audit(150))
+                 events=db.recent_events(60), audit=db.recent_audit(120),
+                 plugins=_LOADED_PLUGINS, api_on=bool(CFG.api_keys))
 
 
 @app.get("/settings", response_class=HTMLResponse)

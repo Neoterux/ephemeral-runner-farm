@@ -47,6 +47,11 @@ class Config:
     reconcile_seconds: int
     disk_sample_seconds: int
     disk_history_days: int
+    api_keys: list[str] = field(default_factory=list)
+    metrics_public: bool = False
+    track_jobs: bool = False
+    plugins_enabled: list[str] = field(default_factory=list)
+    plugin_config: dict[str, object] = field(default_factory=dict)
     hosts: list[Host] = field(default_factory=list)
 
     @property
@@ -68,6 +73,9 @@ def load() -> Config:
     gh = raw.get("github", {})
     wm = raw.get("watermarks", {})
     fl = raw.get("fleet", {})
+    api = raw.get("api", {})
+    ev = raw.get("events", {})
+    plugins = raw.get("plugins", {})
 
     if not srv.get("secret_key") or "REPLACE" in srv.get("secret_key", ""):
         sys.exit("server.secret_key is unset — run: openssl rand -base64 48")
@@ -104,6 +112,11 @@ def load() -> Config:
         reconcile_seconds=int(fl.get("reconcile_seconds", 30)),
         disk_sample_seconds=int(fl.get("disk_sample_seconds", 60)),
         disk_history_days=int(fl.get("disk_history_days", 30)),
+        api_keys=[k for k in api.get("keys", []) if k and "REPLACE" not in k],
+        metrics_public=bool(api.get("metrics_public", False)),
+        track_jobs=bool(ev.get("track_jobs", False)),
+        plugins_enabled=list(plugins.get("enabled", [])),
+        plugin_config={k: v for k, v in plugins.items() if k != "enabled"},
         hosts=hosts,
     )
 

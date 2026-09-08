@@ -39,6 +39,16 @@ CREATE TABLE IF NOT EXISTS kv (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS events (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts      REAL NOT NULL,
+    kind    TEXT NOT NULL,
+    message TEXT NOT NULL,
+    host_id TEXT,
+    slot    INTEGER,
+    data    TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS events_ts ON events(id DESC);
 """
 
 
@@ -134,6 +144,44 @@ def prune_disk_samples(keep_days: int) -> int:
     with conn() as c:
         cur = c.execute("DELETE FROM disk_samples WHERE ts < ?", (cutoff,))
         return cur.rowcount
+
+
+# --- events ----------------------------------------------------------
+
+
+def add_event(ts: float, kind: str, message: str, host_id: str | None,
+              slot: int | None, data: dict[str, Any]) -> None:
+    import json
+    with conn() as c:
+        c.execute(
+            "INSERT INTO events(ts, kind, message, host_id, slot, data) VALUES (?,?,?,?,?,?)",
+            (ts, kind, message, host_id, slot, json.dumps(data)),
+        )
+
+
+def recent_events(limit: int = 100, since_id: int = 0, kind_like: str | None = None) -> list[dict[str, Any]]:
+    import json
+    q = "SELECT id, ts, kind, message, host_id, slot, data FROM events WHERE id > ?"
+    args: list[Any] = [since_id]
+    if kind_like:
+        q += " AND kind LIKE ?"
+        args.append(kind_like.replace("*", "%"))
+    q += " ORDER BY id DESC LIMIT ?"
+    args.append(min(limit, 1000))
+    with conn() as c:
+        rows = c.execute(q, args).fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["data"] = json.loads(d.pop("data") or "{}")
+        out.append(d)
+    return out
+
+
+def prune_events(keep_days: int) -> int:
+    cutoff = time.time() - keep_days * 86400
+    with conn() as c:
+        return c.execute("DELETE FROM events WHERE ts < ?", (cutoff,)).rowcount
 
 
 # --- kv ---------------------------------------------------------------

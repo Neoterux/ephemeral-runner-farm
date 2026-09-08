@@ -152,6 +152,33 @@ sudo GH_TOKEN=… migration/03-retire-runner.sh <account> --apply   # deregister
 `migration/01-reclaim-swap.sh` and `grow-home.sh` help free / grow the
 runner-data filesystem on the common Rocky LVM layout.
 
+## Extending it — API, events, plugins
+
+The manager exposes a stable surface so you don't have to fork the core:
+
+- **`/api/v1/*`** JSON (key-auth) — `summary`, `fleet`, `hosts`, `disks`,
+  `events`, slot control. `GET /api/v1/summary` is a one-poll health rollup.
+  See [docs/API.md](docs/API.md).
+- **`/metrics`** — Prometheus text exposition for Grafana (`prometheus` plugin).
+- **Event hub** — core emits `host.degraded` / `host.recovered` / `disk.freeze`
+  / `slot.offline` / `slot.crashloop` … on state transitions. Plugins subscribe;
+  events are also stored and shown on the Health page.
+- **Plugins** — a Python module with `def setup(hub, config)`; hook events, add
+  routes, add metrics. Two bundled: `webhook` (POST events to ntfy / Pushover /
+  Slack / anything — this is your phone notification) and `prometheus`. See
+  [docs/PLUGINS.md](docs/PLUGINS.md).
+
+```toml
+[plugins]
+enabled = ["webhook", "prometheus"]
+
+[plugins.webhook]
+[[plugins.webhook.targets]]
+url    = "https://ntfy.sh/YOUR-TOPIC"
+events = ["host.degraded", "host.recovered", "disk.freeze", "slot.crashloop"]
+format = "ntfy"
+```
+
 ## Known limitations
 
 - **The UI is plain HTTP.** Fine on a trusted LAN. To harden, put the manager

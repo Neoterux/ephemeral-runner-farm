@@ -20,7 +20,7 @@ private_key_file = "/home/ghrunner/.config/sp-runner/github-app.pem"
 
 [watermarks]
 # Percent-used of the runner-data filesystem (first entry in the agent's
-# disk_mounts). See docs/ARCHITECTURE.md.
+# disk_mounts). See docs/watermarks.md.
 warn = 75
 prune = 85
 freeze = 92
@@ -35,6 +35,25 @@ reconcile_seconds = 30
 disk_sample_seconds = 60
 # Keep this many days of disk samples.
 disk_history_days = 30
+
+[api]
+# X-API-Key values accepted on /api/v1/* and /metrics. Empty = API disabled.
+keys = ["REPLACE_WITH_RANDOM_TOKEN"]
+metrics_public = false
+
+[events]
+track_jobs = false
+
+[plugins]
+enabled = []                # ["webhook", "prometheus"] — see docs/PLUGINS.md
+
+# [plugins.prometheus]
+#
+# [plugins.webhook]
+# [[plugins.webhook.targets]]
+# url    = "https://ntfy.sh/YOUR-TOPIC"
+# events = ["host.degraded", "host.recovered", "disk.freeze", "slot.crashloop"]
+# format = "ntfy"
 
 # One block per host. The local host uses loopback + no TLS; remote hosts use
 # https with a pinned certificate fingerprint (deploy.sh prints it).
